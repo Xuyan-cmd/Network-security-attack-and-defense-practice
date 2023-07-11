@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div align="center">
 <img src="https://rockoss-1309912377.cos.ap-beijing.myqcloud.com/picgo/logo1.png?q-sign-algorithm=sha1&q-ak=AKIDqVTxW5OWTJyPemjcRMLAl7J1WoulZPDs&q-sign-time=1689064042;9000000000&q-key-time=1689064042;9000000000&q-header-list=host&q-url-param-list=&q-signature=aad9fa8c543509e08d98b24f6f5ef5b2a158f79e" >
 <h1 align="center">
@@ -33,3 +34,34 @@
 ## 📒项目日志
 
 👨‍💻：[记录日志](https://www.baichuanweb.cn/article/example-68)
+=======
+# **2023暑期网络安全攻防实践记录报告**
+
+## **负责工作**
+
+- 制定分工计划
+- 作为红队完成漏洞存在性验证和漏洞利用
+
+- 作为蓝队对漏洞攻击行为进行持续检测和威胁识别，并进行修复
+
+## 实践过程
+
+### 环境搭建
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+>>>>>>> 4cb2a77 (7.11 攥写实验报告)
