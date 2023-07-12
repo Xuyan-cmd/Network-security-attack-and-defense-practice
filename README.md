@@ -13,9 +13,22 @@
 
 > **万事开头难，只要肯攀登**
 
-在模拟红蓝网络攻防实践的整个过程之前，需要确保本地环境部署完毕，当然在黄药师录制好的[视频指导](https://www.bilibili.com/video/BV1p3411x7da/?p=22&spm_id_from=pageDriver&vd_source=61a1cf010feeebc60643481f16fc695e)下可以很快的部署完能够省略很多比较繁琐的操作：
+**1.配置虚拟机，调节网络环境**
 
-**1.从仓库中拉取到本机的虚拟机系统当中**：
+本次实践中，虚拟机配置两张网卡：`Host-only`网卡和`网络地址转换(NAT)`
+
+<img src="img/virtualnetwork.png" alt="virtualnetwork" style="zoom:50%;" />
+
+当然要完成红蓝攻防对抗，需要准备攻击者主机和靶机，直接使用多重加载镜像，能够有效简化整个实验过程：
+
+<img src="img/windows.png" alt="windows" style="zoom: 67%;" />
+
+同时为了使得挂载的两个虚拟机的ip地址不同，可以自行手动更新地址：
+<img src="img/peizhi.png" alt="peizhi" style="zoom: 50%;" />
+
+**2.从仓库中拉取到本机的虚拟机系统当中**：
+
+在模拟红蓝网络攻防实践的整个过程之前，需要确保本地环境部署完毕，当然在黄药师录制好的[视频指导](https://www.bilibili.com/video/BV1p3411x7da/?p=22&spm_id_from=pageDriver&vd_source=61a1cf010feeebc60643481f16fc695e)下可以很快的部署完能够省略很多比较繁琐的操作：
 
 ```shell
 git clone https://github.com/c4pr1c3/ctf-games.git
@@ -29,7 +42,7 @@ sudo apt update && sudo apt install -y docker.io docker-compose jq
 
 构建好后，直接运行老师给出的bash脚本即可在本地的80端口开启容器：
 
-![container build](img/container%20build.png)
+<img src="img/container%20build.png" alt="container build" style="zoom:50%;" />
 
 此处在运行`start.sh`脚本时，需要在root用户权限下执行，当然，也可以将当前用户添加到 docker 用户组，免 sudo 执行 docker 相关指令：
 
@@ -105,17 +118,17 @@ sudo usermod -a -G docker ${USER}
     docker info
     ```
 
-    ![dockerpeizhi](img/dockerpeizhi.png)
+    <img src="img/dockerpeizhi.png" alt="dockerpeizhi" style="zoom:50%;" />
 
-**2.测试部署本地的Vulfocus**
+**3.测试部署本地的Vulfocus**
 
 进入部署好的地址，能够看到对应的镜像列表等信息：
 
-![vulfocus-platform](img/vulfocus-platform.png)
+<img src="img/vulfocus-platform.png" alt="vulfocus-platform" style="zoom:50%;" />
 
 在镜像列表同步上游镜像，能够得到Vulfocus已经提供的镜像：
 
-![mirror list](img/mirror%20list.png)
+<img src="img/mirror%20list.png" alt="mirror list" style="zoom:50%;" />
 
 尝试下载镜像，并在容器中启动环境进行一定测试：
 
