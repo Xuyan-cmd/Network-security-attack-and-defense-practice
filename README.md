@@ -128,6 +128,8 @@ sudo usermod -a -G docker ${USER}
 
 在镜像列表同步上游镜像，能够得到Vulfocus已经提供的镜像：
 
+![cvetest](img/cvetest.png)
+
 <img src="img/mirror%20list.png" alt="mirror list" style="zoom:50%;" />
 
 尝试下载镜像，并在容器中启动环境进行一定测试：
