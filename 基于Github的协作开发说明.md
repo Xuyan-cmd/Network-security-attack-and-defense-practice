@@ -2,23 +2,12 @@
 
 **本次协作开发通过Github提供的协同开发完成**
 
-## 第一步
+## 步骤
 
-- **复刻我们的集体仓库到个人仓库内**
+- **在我们使用Github进行操作时，我们要确保在自己的分支内修改，一定要谨慎不得覆盖或者影响到其他分支或者主分支的内容（若修改了其他分支内容一定要事先告知）**
+- 每一次在修改前，请切换到`main`分支执行指令`git pull`更新最新的主分支内容，然后再切换到个人分支，进行修改，`git commit`之后再执行`git rebase main`，确保分支挂在新的主分支版本上。
 
-  （此处由于我本人是仓库拥有者，因此无法复刻，其他协作者可以复刻）
-
-## 第二步
-
-- 复刻后的仓库与原仓库互不影响，即在复刻仓库修改和提交的文件不会影响到上游源仓库,此后，每位成员后续工作在复刻仓库进行，并将修改的对应部分提交到对应的分支。
-
-![](https://rockoss-1309912377.cos.ap-beijing.myqcloud.com/picgo/001.png?q-sign-algorithm=sha1&q-ak=AKIDqVTxW5OWTJyPemjcRMLAl7J1WoulZPDs&q-sign-time=1688953545;9000000000&q-key-time=1688953545;9000000000&q-header-list=host&q-url-param-list=&q-signature=67b52bd987026c7297973e77560674b48c4c56f0)
-
-## 第三步
-
-- 每次提交修改后，据需要pull request
-
-![](https://rockoss-1309912377.cos.ap-beijing.myqcloud.com/picgo/002.png?q-sign-algorithm=sha1&q-ak=AKIDqVTxW5OWTJyPemjcRMLAl7J1WoulZPDs&q-sign-time=1688953626;8999999999&q-key-time=1688953626;8999999999&q-header-list=host&q-url-param-list=&q-signature=29168009396908cb4a130666230f9a39147e4876)
+![](https://rockoss-1309912377.cos.ap-beijing.myqcloud.com/picgo/comiit.png?q-sign-algorithm=sha1&q-ak=AKIDqVTxW5OWTJyPemjcRMLAl7J1WoulZPDs&q-sign-time=1689161111;8999999999&q-key-time=1689161111;8999999999&q-header-list=host&q-url-param-list=&q-signature=fdd80a15d785766c4a791a45175a74ccd0cdf1f6)
 
 - 此处我给每位成员都设置了管理权限，因此每位成员都可以自行审查或者审核他人的request，审核完毕没有错误即可合并分支到上游仓库。
 
