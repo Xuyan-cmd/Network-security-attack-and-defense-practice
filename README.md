@@ -1,4 +1,4 @@
-# *2023暑期网络安全攻防实践记录报告**
+# 2023暑期网络安全攻防实践记录报告
 
 ## **负责工作**
 
@@ -11,7 +11,7 @@
 
 ### 环境搭建
 
-> **万事开头难，只要肯攀登**
+> 万事开头难，只要肯攀登
 
 **1.配置虚拟机，调节网络环境**
 
@@ -133,3 +133,63 @@ sudo usermod -a -G docker ${USER}
 <img src="img/mirror%20list.png" alt="mirror list" style="zoom:50%;" />
 
 尝试下载镜像，并在容器中启动环境进行一定测试：
+
+![start image test](img/start%20image%20test.png)
+
+**4.如何去自定义一个场景拓扑镜像**、
+
+我们在搭建整个网络攻防的模拟环境的过程中，需要去构建跨网段渗透的场景镜像，而由于官网（[在线平台](https://vulfocus.cn/#/scene/list)）已经不再提供下载和资源镜像分享，因此需要自己去设计构建相应的拓扑场景和镜像：
+
+![Download function off](img/Download%20function%20off.png)
+
+我们直接手动设计场景，首先，要达成跨网段和识别，进入办公区和核心区的任务，简单模拟其环境供使用这一漏洞攻防环境，我们需要准备两张网卡实现二层网络的搭建：
+
+![Gateway configuration](img/Gateway%20configuration.png)
+
+攻击者主机通过暴露在“外网”的靶机漏洞从而渗透攻击DMZ区域，并将其作为跳板访问，依次利用漏洞访问到核心网内的靶机：
+![Scene Topology](img/Scene%20Topology.png)
+
+在容器中启动场景，查看相应的镜像信息：
+
+![The scene started successfully](img/The%20scene%20started%20successfully.png)
+
+完成上述步骤即构建了一个双层网段的渗透测试环境的模拟。
+
+### 漏洞验证和利用
+
+> 雄关漫道真如铁，而今迈步从头越。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 漏洞威胁监测和缓解修复
+
+> 欲穷千里目，更上一层楼
+
+
+
+
+
+
+
+
+
+
+
