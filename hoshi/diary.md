@@ -26,3 +26,15 @@
 - 2023年7月15日，记不清是不是已经说过了，但是还是记录一下，USTC已经停止对校外提供docker hub的镜像源了，官网上有说明，[ctf-games中关于vulfocus的README还没改](https://github.com/c4pr1c3/ctf-games/tree/master/fofapro/vulfocus)，仍然是cat中科大镜像源🤔
 
   ![screenshot](./img/2023-07-15-124831.png)
+
+- 2023年7月15日，调换Victim主机和Attacker主机之后果然一切顺利，先是正常初始化了Metaspolit的数据库，然后也顺着教程拿到了第一台机器的flag
+
+  ![screenShot](./img/2023-07-15-213407.png)
+
+  ![screenShot](./img/2023-07-15-213411.png)
+
+  ![screenShot](./img/2023-07-15-224012.png)
+
+  ![screenShot](./img/2023-07-15-224519.png)
+
+  有趣的是rock似乎遇到了和我开始打算用WSL作为Attacker主机使用时msfdb初始化问题，目前还不清楚他具体遇到了什么问题
