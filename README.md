@@ -159,9 +159,54 @@ sudo usermod -a -G docker ${USER}
 
 > 雄关漫道真如铁，而今迈步从头越。
 
+#### CVE-2020-17530 Struts2
+
+我们启动场景后，查看当前运行的镜像：
+
+![dockerps](img/dockerps.png)
+
+能够看到在Host-only网卡的本地地址的58841端口开启了`CVE-2020-17530 Struts2`的靶场环境，
+
+![attackcore](img/attackcore.png)
+
+切换到攻击者主机并执行：
+
+```shell
+# metasploit 基础配置
+# 更新 metasploit
+sudo apt install -y metasploit-framework
+# 初始化 metasploit 本地工作数据库
+sudo msfdb init
+```
+
+![datalab](img/datalab.png)
+
+```shell
+# 启动 msfconsole
+msfconsole
+# 确认已连接 pgsql
+db_status
+# 建立工作区
+workspace -a demo
+```
+
+![metasploit](img/metasploit.png)
 
 
 
+
+
+
+
+#### weblogic-cve-2019-2725
+
+
+
+
+
+
+
+#### nginx-php-flag
 
 
 
@@ -183,7 +228,7 @@ sudo usermod -a -G docker ${USER}
 
 > 欲穷千里目，更上一层楼
 
-
+#### 
 
 
 
