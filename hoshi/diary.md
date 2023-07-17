@@ -107,3 +107,61 @@
   ![screenShot](./img/2023-07-17-192034.png)
 
   唯一的疑惑是为什么明明还有一台nginx的php漏洞主机没交flag，但是却已经显示已完成了🤔
+
+- 2023年7月17日，将前述部分刚刚得到的3个普通会话升级meterpreter时遇到问题，升级失败，报错情况如下：
+
+  ```metasploit
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -u 3-5
+  [*] Executing 'post/multi/manage/shell_to_meterpreter' on session(s): [3, 4, 5]
+
+  [*] Upgrading session ID: 3
+  [-] Post failed: NoMethodError undefined method `include?' for nil:NilClass
+  [-] Call stack:
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:114:in `set_is_echo_shell'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:135:in `shell_command_token_base'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:122:in `shell_command_token_unix'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:91:in `shell_command_token'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/post/common.rb:132:in `cmd_exec'
+  [-]   /usr/share/metasploit-framework/modules/post/multi/manage/shell_to_meterpreter.rb:114:in `run'
+  [*] Sleeping 5 seconds to allow the previous handler to finish..
+  [*] Upgrading session ID: 4
+  [-] Post failed: NoMethodError undefined method `include?' for nil:NilClass
+  [-] Call stack:
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:114:in `set_is_echo_shell'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:135:in `shell_command_token_base'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:122:in `shell_command_token_unix'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:91:in `shell_command_token'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/post/common.rb:132:in `cmd_exec'
+  [-]   /usr/share/metasploit-framework/modules/post/multi/manage/shell_to_meterpreter.rb:114:in `run'
+  [*] Sleeping 5 seconds to allow the previous handler to finish..
+  [*] Upgrading session ID: 5
+  [-] Post failed: NoMethodError undefined method `include?' for nil:NilClass
+  [-] Call stack:
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:114:in `set_is_echo_shell'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:135:in `shell_command_token_base'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:122:in `shell_command_token_unix'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/session/provider/single_command_shell.rb:91:in `shell_command_token'
+  [-]   /usr/share/metasploit-framework/lib/msf/core/post/common.rb:132:in `cmd_exec'
+  [-]   /usr/share/metasploit-framework/modules/post/multi/manage/shell_to_meterpreter.rb:114:in `run'
+  [*] Sleeping 5 seconds to allow the previous handler to finish..
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions
+
+  Active sessions
+  ===============
+
+    Id  Name  Type                   Information          Connection
+    --  ----  ----                   -----------          ----------
+    1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58718 (172.29.108.146)
+    2         meterpreter x86/linux  root @ 192.170.84.4  192.168.56.107:4433 -> 192.168.56.1:58648 (172.29.108.146)
+    3         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58646 (192.170.84.2)
+    4         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58662 (192.170.84.3)
+    5         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:58702 (192.170.84.5)
+
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) >
+  ```
+
+  可以看到似乎都是一个地方遇到问题了
+
+- 2023年7月17日，针对上面的问题大概检查了一下，发现是给Victim分配的内存太小了，导致在开启抓包后很快就爆内存了，倒不是metasploit的问题，只是场景主机没有响应了，使用普通sessions的shell也是死机状态😔
+
+  这下又要重开了，绝望
