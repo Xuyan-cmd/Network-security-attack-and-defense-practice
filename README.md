@@ -381,7 +381,7 @@ http://192.168.56.108:30965/
 
 #### 自动化漏洞验证
 
-编写**POC代码**
+编写[**POC代码**](./src/poc.py)
 
 检测函数`checking(url)`中，脚本会发送GET请求到目标URL的`/_async/AsyncResponseService`路径，并检查响应状态码。如果状态码为200，表示目标存在CVE-2019-2725漏洞；否则，表示目标不受该漏洞影响。
 
@@ -424,7 +424,7 @@ python3 poc.py -f IP_test.txt -p
 
 #### 脚本攻击
 
-编写**EXP代码**
+编写[**EXP代码**](./src/exp.py)
 
 首先定义HTTP请求的headers和data
 
