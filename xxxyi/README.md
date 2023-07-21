@@ -21,11 +21,11 @@ kali
 
 多重加载镜像，使用两块网卡，第二块网卡使用host-only
 
-![网卡](img\网卡.png)
+![网卡](img\nic.png)
 
 启动虚拟机，查看IP地址，配置网卡，保证网卡能正确的分配到地址
 
-![修改配置文件](img\修改配置文件.png)
+![修改配置文件](img\configuration.png)
 
 使用kali开启ssh服务
 
