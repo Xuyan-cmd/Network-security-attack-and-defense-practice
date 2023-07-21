@@ -157,7 +157,7 @@
   - 查看配置是否成功：
 
     ```shell
-    docker info
+    $ docker info
     ```
 
      <img src="img/dockerconfig.png" alt="dockerconfig" style="zoom:50%;" />
@@ -201,9 +201,33 @@
 
 **5.自定义一个场景拓扑镜像**
 
-根据同学提供的情报得知：由于[官网](https://vulfocus.cn/#/scene/list)已经不再提供下载和资源镜像分享，因此需要自己去设计构建相应的拓扑场景和镜像：
+- 根据同学提供的情报得知：由于[官网](https://vulfocus.cn/#/scene/list)已经不再提供下载和资源镜像分享，因此需要自己去设计构建相应的拓扑场景和镜像：
 
 <img src="img/reason.png" alt="reason" style="zoom:50%;" />
+
+- 这里有两种方式，
+  - 第一：直接导入 rock 同学提前搭建好的镜像场景——手搓 dmz，并且下载需要的漏洞镜像。
+  - 第二：自己手动搭建场景。
+
+- 为了方便起见，我选择了第一种方式，【场景管理】-【环境编排管理】-【添加场景】- 选择提前下载好的`手搓dmz.zip` -【修改端口开放状态】-【保存】-【发布】-【下载所需要的镜像】。
+
+  > 注意记得将第二层容器中端口开放更改为 `false`。
+
+  <img src="img/alter_to_false.png" alt="alter_to_false" style="zoom:50%;" />
+
+- 一共需要 3 种漏洞镜像：`struts2-cve-2020-17530`、`weblogic-cve-2019-2725`、`nginx-php-flag`。正常情况下，按照上述操作，此时我们需要做的就是静静等待它下载完成，需要一点耐心，因为它下载速度很慢。但是我下载的时候遇到了问题，`weblogic-cve-2019-2725` 该镜像的下载一直无法成功。我试过很多方法：重启虚拟机、重新导入场景、单独下载、更换镜像源...全部无济于事，下载进度一直卡在一个位置。
+
+  <img src="img/stuck.png" alt="stuck" style="zoom:50%;" />
+
+- 因为在这个地方我耗费了太多时间，心态崩溃，所以中间 gap 了两天。今天重振旗鼓，再次挑战。我想如果无法从这个网站上直接下载的话，那能不能用别的方式下载呢？在网上查找了一番资料，终于，根据 [Vulfocus 镜像维护目录](https://github.com/fofapro/vulfocus/blob/master/images/README.md)得知：可以直接在 docker 里面拉去漏洞镜像。
+
+  ```shell
+  $ docker pull vulfocus/weblogic-cve_2019_2725
+  ```
+
+- 这次，终于成功搭建好场景啦！
+
+    <img src="img/scene.png" alt="scene" style="zoom:50%;" />
 
 
 ## 参考链接
@@ -211,3 +235,5 @@
 - [网络安全(2021)综合实验](https://www.bilibili.com/video/BV1p3411x7da/?p=22&spm_id_from=pageDriver&vd_source=61a1cf010feeebc60643481f16fc695e)
 
 - [cuc-ns-ppt](https://c4pr1c3.github.io/cuc-ns-ppt/vuls-awd.md.v4.html#/title-slide)
+
+- [Vulfocus 镜像维护目录](https://github.com/fofapro/vulfocus/blob/master/images/README.md)
