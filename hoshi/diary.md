@@ -322,3 +322,7 @@
   ```
 
 - 2023年7月21日，针对上面对struts2的RCE分析，并没有找到比较简单且易于实现的修补方式，网络上的修补意见都是建议升级Apache Struts版本因为官方确实发布了修复版本，在不能够升级的万不得已的情况下才建议通过“[对不可信用户禁用forced OGNL evaluation](https://nsfocusglobal.com/struts2-s2-061-remote-code-execution-vulnerability-cve-2020-17530-threat-alert/)”的访问控制思路来解决这部分问题，倒是很好的解决思路🤔
+
+- 2023年7月22日，突然，居然，才，想到了早就应该想到的，直接筛选HTTP流量就可以快速得到所有漏洞利用的exploit，3k+的报文瞬间就剩下了9个，只能说最近脑子好像不太够用了...
+
+  ![screenShot](./img/2023-07-22-172100.png)
