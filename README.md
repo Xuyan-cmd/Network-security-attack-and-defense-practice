@@ -607,16 +607,47 @@ public void startElement(String uri, String localName, String qName, Attributes 
     \Middleware\wlserver_10.3\server\lib\%DOMAIN_HOME%\servers\AdminServer\tmp\_WL_internal\%DOMAIN_HOME%\servers\AdminServer\tmp\.internal\
     ```
 
-#### struts2-cve-2020-17530漏洞修复方案
+#### 自动化攻击脚本编写（struts2-cve-2020-17530）
 
 根据分析，Apache Struts 2是一个用于开发Java EE网络应用程序的开源网页应用程序架构。它利用并延伸了Java Servlet API，鼓励开发者采用MVC架构。
 
 如果开发人员使用了 `%{…}` 语法，那么攻击者可以通过构造恶意的 `OGNL` 表达式，引发 `OGNL` 表达式二次解析，最终造成远程代码执行的影响。
 
-因此这是一个远程代码执行漏洞，
+因此这是一个远程代码执行漏洞，所以可以尝试构造对应的`OGNL`的表达式脚本来尝试攻击。
+
+在场景中，针对暴露的第二个靶机端口我们尝试进行攻击：
+
+![status repair](img/status%20repair.png)
+
+![The attack is back](img/The%20attack%20is%20back.png)
+
+根据前文中我们已经构造的payload：
+
+```shell
+http://192.168.1.110:8080/?id=%25%7b+%27test%27+%2b+(2000+%2b+20).toString()%7d
+```
+
+尝试在代码中构造这一表达式：
+
+![attackshell](img/attackshell.png)
+
+运行后，通过burp抓包能够得到：
+
+![endingsone](img/endingsone.png)
+
+Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell可以使用https://www.ddosi.org/shell/ 在线工具平台转码：
+
+![urlfaccode](img/urlfaccode.png)
+
+![finish_shell](img/finish_shell.png)
+
+对开放端口运行脚本，成功getshell：
+
+![finishshellattack](img/finishshellattack.jpg)
 
 ## 参考资料
 
 - [关于Oracle WebLogic wls9-async组件存在反序列化远程命令执行漏洞的安全公告（第二版）](https://www.cnvd.org.cn/webinfo/show/4999)
 - [Oracle Security Alert Advisory - CVE-2019-2725](https://www.oracle.com/security-alerts/alert-cve-2019-2725.html)
-- ### [Long Term Persistence of JavaBeans Components: XML Schema](https://www.oracle.com/technical-resources/articles/java/persistence3.html)
+- [Long Term Persistence of JavaBeans Components: XML Schema](https://www.oracle.com/technical-resources/articles/java/persistence3.html)
+
