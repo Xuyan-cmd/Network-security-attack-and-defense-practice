@@ -506,4 +506,97 @@ tcpdump -i eth0 -w captured_traffic.pcap
 
 可以查看到疑似远程代码执行的攻击流量
 
-#### 自动化攻击脚本编写
+#### 自动化漏洞验证
+
+> 针对**Weblogic CVE-2019-2725**的自动化验证
+
+`CVE-2019-2725`是一个`Oracle weblogic`反序列化远程命令执行漏洞，这个漏洞依旧是根据`weblogic`的`xmldecoder`反序列化漏洞，通过针对Oracle官网历年来的补丁构造payload来绕过。
+
+**影响版本** ：
+`weblogic 10.x`
+`weblogic 12.1.3`
+
+在场景中访问中层网络靶机（已存放**Weblogic CVE-2019-2725**漏洞）
+
+![accesspath](img/accesspath.png)
+
+根据其漏洞特性构造[**POC代码**：](./src/poc.py)
+
+检测函数`checking(url)`中，脚本会发送GET请求到目标URL的`/_async/AsyncResponseService`路径，并检查响应状态码。如果状态码为200，表示目标存在CVE-2019-2725漏洞；否则，表示目标不受该漏洞影响。
+
+```python
+def checking(url):
+  try:
+    response = requests.get(url+filename)
+    if response.status_code == 200:
+      print('[+] {0} 存在CVE-2019-2725 Oracle weblogic 反序列化远程命令执行漏洞'.format(url))
+    else:
+      print('[-] {0} 不存在CVE-2019-2725 Oracle weblogic 反序列化远程命令执行漏洞'.format(url))
+  except Exception as e:
+    print("[-] {0} 连接失败".format(url))
+    exit()
+if options.FILE and os.path.exists(options.FILE):
+  with open(options.FILE) as f:
+    urls = f.readlines()
+    #print(urls)
+    for url in urls:
+      url = str(url).replace('\n','').replace('\r','').strip()
+      checking(url)
+elif options.FILE and not os.path.exists(options.FILE):
+  print('[-] {0} 文件不存在'.format(options.FILE))
+  exit()
+else:
+  #上传链接
+  url = options.URL+':'+options.PORT
+  checking(url)
+```
+
+**执行脚本**：
+
+```bash
+python3 poc.py -f IP_test.txt -p
+```
+
+![](../张健/img/poc.png)
+
+检测出存在`CVE-2019-2725`漏洞
+
+#### 智能化漏洞攻击脚本
+
+##### struts2-cve-2020-17530脚本构造
+
+根据分析，Apache Struts 2是一个用于开发Java EE网络应用程序的开源网页应用程序架构。它利用并延伸了Java Servlet API，鼓励开发者采用MVC架构。
+
+如果开发人员使用了 `%{…}` 语法，那么攻击者可以通过构造恶意的 `OGNL` 表达式，引发 `OGNL` 表达式二次解析，最终造成远程代码执行的影响。
+
+因此这是一个远程代码执行漏洞，所以可以尝试构造对应的`OGNL`的表达式脚本来尝试攻击。
+
+在场景中，针对暴露的第二个靶机端口我们尝试进行攻击：
+
+![status repair](img/status repair.png)
+
+![The attack is back](img/The attack is back.png)
+
+根据前文中我们已经构造的payload：
+
+```shell
+http://192.168.1.110:8080/?id=%25%7b+%27test%27+%2b+(2000+%2b+20).toString()%7d
+```
+
+尝试在代码中构造这一表达式：
+
+![attackshell](img/attackshell.png)
+
+运行后，通过burp抓包能够得到：
+
+![endingsone](img/endingsone.png)
+
+Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell可以使用https://www.ddosi.org/shell/ 在线工具平台转码：
+
+![urlfaccode](img/urlfaccode.png)
+
+![finish_shell](img/finish_shell.png)
+
+对开放端口运行脚本，成功getshell：
+
+![finishshellattack](img/finishshellattack.jpg)
