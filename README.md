@@ -46,6 +46,8 @@
 
 > 万事开头难，只要肯攀登
 
+**[场景镜像文件](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/%E5%A4%9A%E7%BD%91%E6%AE%B5%E6%B8%97%E9%80%8F%E5%9C%BA%E6%99%AF%E9%95%9C%E5%83%8F)**
+
 **1.配置虚拟机，调节网络环境**
 
 本次实践中，虚拟机配置两张网卡：`Host-only`网卡和`网络地址转换(NAT)`
@@ -229,7 +231,7 @@ sudo usermod -a -G docker ${USER}
      $ ssh username@ip
      ```
      即可免密登录虚拟机的 Linux 系统。
-    
+
 
  ![ssh](img/ssh.png)
 
@@ -727,6 +729,8 @@ cd user_projects/domains/base_domain/servers/AdminServer/tmp/_WL_internal/bea_wl
 #### 漏洞的缓解和修复
 
 ##### Weblogic-cve-2019-2725代码层面漏洞分析和修复
+
+[**代码地址**](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Weblogic-cve-2019-2725_fix%20code/FixDemo(cve-2019-2725))
 
 通过我们在场景中的复现能够清楚看到，`Weblogic-cve-2019-2725`的漏洞源于在反序列化处理输入信息的过程中存在缺陷，未经授权的攻击者可以发送精心构造的恶意 HTTP 请求，利用该漏洞获取服务器权限，实现远程代码执行。
 
