@@ -465,7 +465,7 @@ flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
 
 
 
-### 4 漏洞威胁监测和缓解修复
+### 4 智能化漏洞威胁监测、漏洞攻击和缓解修复
 
 #### 异常流量检测与防护
 
@@ -509,6 +509,8 @@ tcpdump -i eth0 -w captured_traffic.pcap
 #### 自动化漏洞验证
 
 > 针对**Weblogic CVE-2019-2725**的自动化验证
+
+[**代码地址**](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Weblogic%20CVE-2019-2725_validation%20script)
 
 `CVE-2019-2725`是一个`Oracle weblogic`反序列化远程命令执行漏洞，这个漏洞依旧是根据`weblogic`的`xmldecoder`反序列化漏洞，通过针对Oracle官网历年来的补丁构造payload来绕过。
 
@@ -563,7 +565,9 @@ python3 poc.py -f IP_test.txt -p
 
 #### 智能化漏洞攻击方案
 
-##### struts2-cve-2020-17530脚本构造
+##### Struts2-cve-2020-17530脚本构造
+
+**[代码地址](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Struts2-cve-2020-17530_attack%20script)**
 
 根据分析，Apache Struts 2是一个用于开发Java EE网络应用程序的开源网页应用程序架构。它利用并延伸了Java Servlet API，鼓励开发者采用MVC架构。
 
@@ -603,7 +607,7 @@ Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell�
 
 ##### Weblogic CVE-2019-2725 攻击脚本构造
 
-编写[**EXP代码**](./src/exp.py)
+[**代码地址**](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Struts2-cve-2020-17530_attack%20script)
 
 首先定义HTTP请求的headers和data
 
@@ -719,6 +723,154 @@ cd user_projects/domains/base_domain/servers/AdminServer/tmp/_WL_internal/bea_wl
 ```
 
 ![findjsp](img/findjsp.png)
+
+#### 漏洞的缓解和修复
+
+##### Weblogic-cve-2019-2725代码层面漏洞分析和修复
+
+通过我们在场景中的复现能够清楚看到，`Weblogic-cve-2019-2725`的漏洞源于在反序列化处理输入信息的过程中存在缺陷，未经授权的攻击者可以发送精心构造的恶意 HTTP 请求，利用该漏洞获取服务器权限，实现远程代码执行。
+
+我们从Oracle官方漏洞复现源拿到漏洞镜像，根据Oracle的漏洞报告，此漏洞存在于异步通讯服务，通过访问路径`/_async/AsyncResponseService`，判断不安全组件是否开启。`wls9_async_response.war`包中的类由于使用注解方法调用了Weblogic原生处理Web服务的类，因此会受该漏洞影响：
+
+![Bug fixes](../徐岩/img/Bug fixes.png)
+
+我们继续分析漏洞是如何发送http请求从而获得权限的，在`ProcessBuilder`类中打下断点，可以看到相应的调用栈过程：
+
+![calling procedure](../徐岩/img/calling procedure.png)
+
+我们逐步分析，首先程序是继承自`HttpServlet`的`BaseWSServlet`类，其中的service方法主要用于处理HTTP请求及其响应，通过HTTP协议发送的请求包封装在`HttpServletRequest`类的实例化对象`var1`中
+
+![underlying code logic](../徐岩/img/underlying code logic.png)
+
+调用`BaseWSServlet`中定义的内部类`AuthorizedInvoke`的`run()`方法完成传入HTTP对象的权限验证过程：
+
+![AuthorizedInvoke](../徐岩/img/AuthorizedInvoke.png)
+
+若校验成功，则进入到`SoapProcessor`类的process方法中，通过调用`HttpServletRequest`类实例化对象`var1`的`getMethod()`方法获取HTTP请求类型，若为POST方法，则继续处理请求：
+
+![linecontent](../徐岩/img/linecontent.png)
+
+HTTP请求发送至`SoapProcessor`类的`handlePost`方法：
+
+```java
+private void handlePost(BaseWSServlet var1, HttpServletRequest var2, HttpServletResponse var3) throws IOException {
+    assert var1.getPort() != null;
+
+    WsPort var4 = var1.getPort();
+    String var5 = var4.getWsdlPort().getBinding().getBindingType();
+    HttpServerTransport var6 = new HttpServerTransport(var2, var3);
+    WsSkel var7 = (WsSkel)var4.getEndpoint();
+    try {
+        Connection var8 = ConnectionFactory.instance().createServerConnection(var6, var5);
+        var7.invoke(var8, var4);
+    } catch (ConnectionException var9) {
+        this.sendError(var3, var9, "Failed to create connection");
+    } catch (Throwable var10) {
+        this.sendError(var3, var10, "Unknown error");
+    }
+}
+```
+
+**SOAP是一种通信协议**，用于应用程序之间的通信。它是一种轻量的、简单的、基于XML的协议，可以独立于平台和语言进行通信。SOAP定义了数据交互中如何传递消息的规则，比如在HTTP中规定了POST请求的传参方式，在数据类型不同的情况下可以使用不同的参数方式。
+
+<img src="../徐岩/img/soap.png" alt="soap" style="zoom:50%;" />
+
+在整个进程调用中，`BaseWSServlet`类实例化对象`var1`封装了基于HTTP协议的SOAP消息：
+
+![soapuse](../徐岩/img/soapuse.png)
+
+其中`WorkAreaServerHandler`类中的`handleRequest()`方法用于处理访问请求，通过`WlMessageContext`对象var2获取传入的`MessageContext`，调用`var2`对象的`getHeaders()`方法获取传入SOAP消息的Header元素，并最终将该元素传递到`WorkAreaHeader`对象`var4`中
+
+![var4](../徐岩/img/var4.png)
+
+通过上述漏洞调用过程分析，要想有效修复漏洞，需要开发补丁,最直接的方法是在路径`weblogic/wsee/workarea/WorkContextXmlInputAdapter.java`中添加了`validate`方法，即在调用`startElement`方法解析XML的过程中，如果解析到`Element`字段值为`Object`就抛出异常：
+
+```java
+private void validate(InputStream is) {
+     WebLogicSAXParserFactory factory = new WebLogicSAXParserFactory();
+      try {
+         SAXParser parser = factory.newSAXParser();
+         parser.parse(is, new DefaultHandler() {
+            public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+               if(qName.equalsIgnoreCase("object")) {
+                  throw new IllegalStateException("Invalid context type: object");
+               }
+            }
+         });
+      } catch (ParserConfigurationException var5) {
+         throw new IllegalStateException("Parser Exception", var5);
+      } catch (SAXException var6) {
+         throw new IllegalStateException("Parser Exception", var6);
+      } catch (IOException var7) {
+         throw new IllegalStateException("Parser Exception", var7);
+      }
+   }
+```
+
+然而，采用黑名单的防护措施很快就被POC轻松绕过，因为其中不包含任何`Object`元素。尽管经过`XMLDecoder`解析后，这种方法仍然会导致远程代码执行，例如给出一段poc：
+
+```java
+<java version="1.4.0" class="java.beans.XMLDecoder">
+    <new class="java.lang.ProcessBuilder">
+        <string>calc</string><method name="start" />
+    </new>
+</java>
+```
+
+因为其中不包含任何Object元素，但经`XMLDecoder`解析后依旧造成了远程代码执行
+
+因此，我们需要将更多的关键字漏洞加入到黑名单中，从而做到当程序解析到关键字属性的字样时，即设置为异常，object、new、method关键字继续加入到黑名单中，一旦解析XML元素过程中匹配到上述任意一个关键字就立即抛出运行时异常。
+
+但是针对void和array这两个元素是有选择性的抛异常，其中当解析到void元素后，还会进一步解析该元素中的属性名，若没有匹配上index关键字才会抛出异常。而针对`array`元素而言，在解析到该元素属性名匹配class关键字的前提下，还会解析该属性值，若没有匹配上byte关键字，才会抛出运行时异常：
+
+```java
+public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            if(qName.equalsIgnoreCase("object")) {
+               throw new IllegalStateException("Invalid element qName:object");
+            } else if(qName.equalsIgnoreCase("new")) {
+              throw new IllegalStateException("Invalid element qName:new");
+            } else if(qName.equalsIgnoreCase("method")) {
+               throw new IllegalStateException("Invalid element qName:method");
+            } else {
+               if(qName.equalsIgnoreCase("void")) {
+                  for(int attClass = 0; attClass < attributes.getLength(); ++attClass) {
+                     if(!"index".equalsIgnoreCase(attributes.getQName(attClass))) {
+                        throw new IllegalStateException("Invalid attribute for element void:" + attributes.getQName(attClass));
+                     }
+                  }
+               }
+               if(qName.equalsIgnoreCase("array")) {
+       String var9 = attributes.getValue("class");
+       if(var9 != null && !var9.equalsIgnoreCase("byte")) {
+      throw new IllegalStateException("The value of class attribute is not valid for array element.");
+     }
+```
+
+当然，如果攻击者使用的poc中再次的利用了void、array和Class或者其他元素依然可能导致绕过补丁，因此这种修复漏洞的方式只能一定程度上的缓解，而不是一种完全可靠的防护措施。
+
+**查阅官方文档，官方对此漏洞发布了紧急的修复方式：**
+
+官方已于4月26日公布紧急补丁包，下载地址如下：https://www.oracle.com/technetwork/security-advisory/alert-cve-2019-2725-5466295.html?from=timeline
+
+主要通过两种方式：
+
+- **升级本地JDK版本**
+
+  因为Weblogic所采用的是其安装文件中默认1.6版本的JDK文件，属于存在反序列化漏洞的JDK版本，因此升级到JDK7u21以上版本可以避免由于Java原生类反序列化漏洞造成的远程代码执行。
+
+- **配置URL访问控制策略**
+
+  部署于公网的WebLogic服务器，可通过ACL禁止对`/_async/`*及`/wls-wsat/`*路径的访问。
+
+- **删除不安全文件**
+
+  - 删除`wls9_async_response.war`与`wls-wsat.war`文件及相关文件夹，并重启Weblogic服务。具体文件路径如下：
+
+    10.3.*版本：
+
+    ```bash
+    \Middleware\wlserver_10.3\server\lib\%DOMAIN_HOME%\servers\AdminServer\tmp\_WL_internal\%DOMAIN_HOME%\servers\AdminServer\tmp\.internal\
+    ```
 
 ### 🔍参考材料
 
