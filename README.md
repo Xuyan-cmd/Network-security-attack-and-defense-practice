@@ -732,23 +732,23 @@ cd user_projects/domains/base_domain/servers/AdminServer/tmp/_WL_internal/bea_wl
 
 我们从Oracle官方漏洞复现源拿到漏洞镜像，根据Oracle的漏洞报告，此漏洞存在于异步通讯服务，通过访问路径`/_async/AsyncResponseService`，判断不安全组件是否开启。`wls9_async_response.war`包中的类由于使用注解方法调用了Weblogic原生处理Web服务的类，因此会受该漏洞影响：
 
-![Bug fixes](../徐岩/img/Bug fixes.png)
+![Bug fixes](img/Bug fixes.png)
 
 我们继续分析漏洞是如何发送http请求从而获得权限的，在`ProcessBuilder`类中打下断点，可以看到相应的调用栈过程：
 
-![calling procedure](../徐岩/img/calling procedure.png)
+![calling procedure](img/calling procedure.png)
 
 我们逐步分析，首先程序是继承自`HttpServlet`的`BaseWSServlet`类，其中的service方法主要用于处理HTTP请求及其响应，通过HTTP协议发送的请求包封装在`HttpServletRequest`类的实例化对象`var1`中
 
-![underlying code logic](../徐岩/img/underlying code logic.png)
+![underlying code logic](img/underlying code logic.png)
 
 调用`BaseWSServlet`中定义的内部类`AuthorizedInvoke`的`run()`方法完成传入HTTP对象的权限验证过程：
 
-![AuthorizedInvoke](../徐岩/img/AuthorizedInvoke.png)
+![AuthorizedInvoke](img/AuthorizedInvoke.png)
 
 若校验成功，则进入到`SoapProcessor`类的process方法中，通过调用`HttpServletRequest`类实例化对象`var1`的`getMethod()`方法获取HTTP请求类型，若为POST方法，则继续处理请求：
 
-![linecontent](../徐岩/img/linecontent.png)
+![linecontent](img/linecontent.png)
 
 HTTP请求发送至`SoapProcessor`类的`handlePost`方法：
 
@@ -773,15 +773,15 @@ private void handlePost(BaseWSServlet var1, HttpServletRequest var2, HttpServlet
 
 **SOAP是一种通信协议**，用于应用程序之间的通信。它是一种轻量的、简单的、基于XML的协议，可以独立于平台和语言进行通信。SOAP定义了数据交互中如何传递消息的规则，比如在HTTP中规定了POST请求的传参方式，在数据类型不同的情况下可以使用不同的参数方式。
 
-<img src="../徐岩/img/soap.png" alt="soap" style="zoom:50%;" />
+![soap](img/soap.png)
 
 在整个进程调用中，`BaseWSServlet`类实例化对象`var1`封装了基于HTTP协议的SOAP消息：
 
-![soapuse](../徐岩/img/soapuse.png)
+![soapuse](img/soapuse.png)
 
 其中`WorkAreaServerHandler`类中的`handleRequest()`方法用于处理访问请求，通过`WlMessageContext`对象var2获取传入的`MessageContext`，调用`var2`对象的`getHeaders()`方法获取传入SOAP消息的Header元素，并最终将该元素传递到`WorkAreaHeader`对象`var4`中
 
-![var4](../徐岩/img/var4.png)
+![var4](img/var4.png)
 
 通过上述漏洞调用过程分析，要想有效修复漏洞，需要开发补丁,最直接的方法是在路径`weblogic/wsee/workarea/WorkContextXmlInputAdapter.java`中添加了`validate`方法，即在调用`startElement`方法解析XML的过程中，如果解析到`Element`字段值为`Object`就抛出异常：
 
@@ -881,3 +881,4 @@ public void startElement(String uri, String localName, String qName, Attributes 
 - [关于Oracle WebLogic wls9-async组件存在反序列化远程命令执行漏洞的安全公告（第二版）](https://www.cnvd.org.cn/webinfo/show/4999)
 - [Oracle Security Alert Advisory - CVE-2019-2725](https://www.oracle.com/security-alerts/alert-cve-2019-2725.html)
 - [Long Term Persistence of JavaBeans Components: XML Schema](https://www.oracle.com/technical-resources/articles/java/persistence3.html)
+- [soap协议注入漏洞挖掘](http://www.smatrix.org/forum/forum.php?mod=viewthread&tid=2525)
