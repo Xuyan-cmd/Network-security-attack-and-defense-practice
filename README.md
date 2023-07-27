@@ -681,6 +681,75 @@ Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell�
 
 ![finishshellattack](img/finishshellattack.jpg)
 
+### 智能化漏洞扫描和攻击工具
+
+#### Fscan使用初探
+
+> 一款内网综合扫描工具，方便一键自动化、全方位漏扫扫描。
+> 支持主机存活探测、端口扫描、常见服务的爆破、ms17010、redis批量写公钥、计划任务反弹shell、读取win网卡信息、web指纹识别、web漏洞扫描、netbios探测、域控识别等功能。
+
+[Github地址](https://github.com/shadow1ng/fscan)
+
+我同时尝试使用集成化的的漏洞工具去模拟渗透攻击，事实上，在实际的渗透中，更多的是使用这种多个功能集成式的工具来实现渗透，这样既能保证有着良好效果，同时也能提高效率。
+
+Fscan使用Go语言编写，git clone下来后，需要编译成可执行程序后使用：
+
+```go
+go build -ldflags="-s -w " -trimpath main.go
+```
+
+工具中提供了多个功能模块：
+
+1.信息搜集:
+
+- 存活探测(icmp)
+- 端口扫描
+
+2.爆破功能:
+
+- 各类服务爆破(ssh、smb、rdp等)
+- 数据库密码爆破(mysql、mssql、redis、psql、oracle等)
+
+3.系统信息、漏洞扫描:
+
+- netbios探测、域控识别
+- 获取目标网卡信息
+- 高危漏洞扫描(ms17010等)
+
+4.Web探测功能:
+
+- webtitle探测
+- web指纹识别(常见cms、oa框架等)
+- web漏洞扫描(weblogic、st2等,支持xray的poc)
+
+5.漏洞利用:
+
+- redis写公钥或写计划任务
+- ssh命令执行
+- ms17017利用(植入shellcode),如添加用户等
+
+6.其他功能:
+
+- 文件保存
+
+##### 对靶机扫描：
+
+我们直接调用相关参数，即可完整获取到靶机所有信息：
+
+```shell
+main.exe -h 192.168.56.1/24
+```
+
+![fscan_attack](img/fscan_attack.png)
+
+
+
+
+
+
+
+
+
 ## 参考资料
 
 - [关于Oracle WebLogic wls9-async组件存在反序列化远程命令执行漏洞的安全公告（第二版）](https://www.cnvd.org.cn/webinfo/show/4999)
