@@ -742,13 +742,9 @@ main.exe -h 192.168.56.1/24
 
 ![fscan_attack](img/fscan_attack.png)
 
+同时，工具可以将该网卡中所有端口信息保存下来：
 
-
-
-
-
-
-
+![resulttxt](img/resulttxt.png)
 
 ## 参考资料
 
