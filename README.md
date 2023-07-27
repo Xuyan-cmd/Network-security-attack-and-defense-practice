@@ -1,208 +1,12 @@
-# 2023网安暑期攻防学习记录
+# 2023网安暑期攻防实验记录
 
-**记录2023网安暑期攻防小学期，持续更新**
+🚩**记录2023网安暑期攻防小学期实验**
 
 - 课程Wiki：[2023年 - 传媒网安教学 Wiki (c4pr1c3.github.io)](https://c4pr1c3.github.io/cuc-wiki/cp/2023/index.html)
 - 课程视频：[[网络安全(2021) 综合实验]](https://www.bilibili.com/video/BV1p3411x7da?p=19&vd_source=640d60cfe2696fffb930fdf01e0aba1d)
 - 视频配套课件地址:[网络安全 (c4pr1c3.github.io)](https://c4pr1c3.github.io/cuc-ns-ppt/vuls-awd.md.v4.html#/漏洞原理详解)
 
-## 7.10
-
-### 课程学习笔记
-
-网络安全综合实验：开源信息系统搭建、加固与漏洞攻防
-
-- 内容提纲
-
-  - 基础运行环境准备
-  - 漏洞攻防环境现状
-  - 漏洞攻防环境搭建
-  - 漏洞攻击
-  - 漏洞利用检测
-  - 漏洞利用防御与加固
-
-- 基础虚拟机环境搭建**必知必会**：
-
-  - 1.安装后虚拟机网卡没有分配到IP?
-
-    - 修改配置文件：![image-20230710173343531](IMG/修改配置文件.png)
-
-    - ![image-20230710173436296](IMG/修改配置文件内容.png)
-
-    - ```
-      再执行：
-      sudo ifdown eth0 && sudo ifup eth0
-      sudo ifdown eth1 && sudo ifup eth1
-      ```
-
-  - 2.SSH服务启用与SSH免密登录
-
-    - ![image-20230710173916276](IMG/免密登录.png)
-    - [可选]vscode remote on win10
-
-  - 3.克隆出来的虚拟机IP地址—样?
-
-  - 4.**多重加载镜像**制作与使用
-
-  - 5.备份与还原
-
-    - 虚拟机快照与还原
-    - 默认配置文件编辑前备份
-
-- 网络：
-
-  - 网卡1：NAT
-  - 网卡2：Host-only![image-20230710172921152](IMG/网卡配置.png)
-
-- 希望用**终端**，不用图形界面
-
-#### 学习资源
-
-- [本课程第 7 章课件中推荐过的训练学习资源](https://c4pr1c3.github.io/cuc-ns-ppt/chap0x07.md)
-  - https://github.com/c4pr1c3/ctf-games 获得本课程定制的 Web 漏洞攻防训练环境※
-
-  - [upload-labs 一个使用 PHP 语言编写的，专门收集渗透测试和 CTF 中遇到的各种上传漏洞的靶场](https://github.com/c0ny1/upload-labs)
-
-  - [PHP XXE 漏洞与利用源代码分析示例](https://github.com/vulnspy/phpaudit-XXE)
-
-  - [vulhub 提供的 XXE 漏洞学习训练环境](https://github.com/vulhub/vulhub/tree/master/php/php_xxe)
-
-  - [python-xxe](https://github.com/c4pr1c3/python-xxe)
-
-  - [sqli-labs](https://github.com/c4pr1c3/sqli-labs) | [sqli-labs 国内 gitee 镜像](https://gitee.com/c4pr1c3/sqli-labs)
-
-  - [一个包含php,java,python,C#等各种语言版本的XXE漏洞Demo](https://github.com/c0ny1/xxe-lab)
-
-  - [upload-labs 一个使用 PHP 语言编写的，专门收集渗透测试和 CTF 中遇到的各种上传漏洞的靶场](https://github.com/c0ny1/upload-labs)
-
-#### 推荐靶场
-
-[vulhub](https://github.com/topics/vulhub)
-
-- [vulhub/vulhub](https://github.com/vulhub/vulhub)
-- [fofapro/vulfocus](https://github.com/fofapro/vulfocus)
-- [sqlsec/ssrf-vuls](https://github.com/sqlsec/ssrf-vuls)
-
-####  vulfocus快速上手
-
-[c4pr1c3/ctf-games - fofapro/vulfocus](https://github.com/c4pr1c3/ctf-games/tree/master/fofapro/vulfocus)
-
-#### 渗透测试与网络入侵的对比
-
-![image-20230710193006713](IMG/渗透测试与网络入侵对比.png)
-
-## 7.11
-
-#### 从单个漏洞靶标开始
-
-> 一切来自于 **用户输入** 的数据都是不可信的。
-
-1. 找到靶标的【访问入口】
-2. 收集【威胁暴露面】信息
-3. 检测漏洞存在性
-4. 验证漏洞可利用性
-5. 评估漏洞利用效果
-
-进入容器：
-
-```
-docker exec -it 容器名 bash
-```
-
-![image-20230711102419958](IMG/进入容器.png)
-
-```
-查看可用的登录shell：
-cat /etc/shells
-```
-
-根据环境变量写：
-
-![image-20230711102510727](IMG/进入容器2.png)
-
-拷贝容器内的文件到虚拟机内：
-
-```
-docker cp 容器名:/demo/demo.jar ./
-```
-
-![image-20230711102547023](IMG/拷贝文件.png)
-
-对jar包反编译
-
-6.3.4有**DNSlog使用指南**
-
-## 7.13
-
-### 漏洞防护技术原理与应用
-
-- 学习一点漏洞防护技术原理与应用：
-  - [(100条消息) 信息安全-网络安全漏洞防护技术原理与应用_虚拟补丁_learning-striving的博客-CSDN博客](https://blog.csdn.net/qq_43874317/article/details/126689320)
-  - [用于渗透测试的10种漏洞扫描工具 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/159163210)
-
-漏洞分类：
-
-- **普通漏洞：**指相关漏洞信息**已经广泛公开**，安全厂商已经有了解决修补方案
-- **零日漏洞：**特指系统或软件中**新发现的**、尚未提供补丁的漏洞。零日漏洞通**常被用来实施\**定向攻击\****( Targeted Attacks)
-
-漏洞时刻威胁着网络系统的安全，要实现网络系统安全，关键问题之一就是**解决漏洞问题，包括\*漏洞检测、漏洞修补、漏洞预防\***等
-
-网络信息系统的漏洞**主要来自两个方面**
-
-1. **非技术性安全漏洞：**涉及管理组织结构、管理制度、管理流程、人员管理等
-2. **技术性安全漏洞**：主要涉及网络结构、通信协议、设备、软件产品、系统配置、应用系统等
-
-无论是对攻击者还是防御者来说，网络安全漏洞信息获取都是十分必要的
-
-- **攻击者：**通过及时掌握新发现的安全漏洞，可以更有效地实施攻击
-- **防御者：**利用漏洞数据，做到及时补漏，堵塞攻击者的入侵途径
-
-#### 漏洞扫描器
-
-**漏洞扫描器**是常用的网络安全工具，按照扫描器运行的环境及用途，漏洞扫描器主要分三种
-
-1. **主机漏洞扫描器**
-- <u>不需要通过建立网络连接就可以进行</u>
-- 其技术原理：一般是通过<u>检查本地系统中关键性文件</u>的内容及安全属性，来发现漏洞，如配置不当、用户弱口令、有漏洞的软件版本等。主机漏洞扫描器的<u>运行与目标系统在同一主机上，并且只能进行单机检测</u>
-2. 网络漏洞扫描器
-  - 通过<u>与待扫描的目标机建立网络连接后，发送特定网络请求进行漏洞检查</u>
-  - 与主机漏洞扫描的区别：在于网络漏洞扫描器需要<u>与被扫描目标建立网络连接</u>
-  - 优点：便于远程检查联网的目标系统
-  - 缺点：由于没有目标系统的本地访问权限，只能获得有限的目标信息，检查能力受限于各种网络服务中的漏洞检查，如Web、 FTP、TeInet、SSH、POP3、SMTP、SNMP等
-
-3. **专用漏洞扫描器**
-  - 是主要针对<u>特定系统的安全漏洞检查工具</u>，如数据库漏洞扫描器、网络设备漏洞扫描器、Web漏洞扫描器、工控漏洞扫描器
-
-#### 网络安全漏洞处置技术与应用
-
-- 网络安全漏洞发现技术
-
-  - 研究表明，攻击者要成功入侵，关键在于**及早发现和利用目标信息系统的安全漏洞**。目前，网络安全漏洞发现技术成为网络安全保障的关键技术。然而，对于软件系统而言，其功能性错误容易发现，但软件的安全性漏洞不容易发现
-
-  - 网络安全漏洞的发现方法主要依赖于**人工安全性分析**、**工具自动化检测**及**人工智能辅助分析**。
-
-  - 安全漏洞发现的通常方法：是将已发现的安全漏洞进行总结，形成一个漏洞特征库，然后利用该漏洞库，通过人工安全分析或者程序智能化识别
-
-  - 漏洞发现技术：主要有<u>文本搜索、词法分析、范围检查、状态机检查、错误注入、模糊测试、动态污点分析、形式化验证</u>等（匹配技术）
-
-  - 网络安全漏洞修补技术
-    - 补丁管理是一个系统的、周而复始的工作
-    - 主要由六个环节组成：分别是现状分析、补丁跟踪、补丁验证、补丁安装、应急处理和补丁检查
-
-- 网络安全漏洞利用防范技术
-
-  - 主要针对漏洞触发利用的条件进行干扰或拦截，以防止攻击者成功利用漏洞
-
-  - 常见的网络安全漏洞利用防范技术如下：
-    - **地址空间随机化技术**：缓冲区溢出攻击是利用缓冲区溢出漏洞所进行的攻击行动，会以shelIcode地址来覆盖程序原有的返回地址。地址空间随机化(ASLR)就是通过对程序加载到内存的地址进行随机化处理，使得攻击者不能事先确定程序的返回地址值，从而降低攻击成功的概率
-    - **数据执行阻止(DEP)**：是指操作系统通过对特定的内存区域标注为非执行，使得代码不能够在指定的内存区域运行。利用DEP，可以有效地保护应用程序的堆栈区域，防止被攻击者利用
-    - **SEHOP**：原理是防止攻击者利用Structured Exception Handler (SEH)重写
-    - **堆栈保护**：技术原理是通过设置堆栈完整性标记以检测函数调用返回地址是否被篡改，从而阻止攻击者利用缓冲区漏洞
-    - **虚拟补丁**：工作原理是对尚未进行漏洞永久补丁修复的目标系统程序，在不修改可执行程序的前提下，检测进入目标系统的网络流量而过滤掉漏洞攻击数据包，从而保护目标系统程序免受攻击。虚拟补丁通过入侵阻断、Web防火墙等相关技术来实现给目标系统程序“打补丁”，使得黑客无法利用漏洞进行攻击
-
-## 7.16
-
-### 配置环境
+## 一、实验环境
 
 - kali版本：
 
@@ -217,7 +21,8 @@ docker cp 容器名:/demo/demo.jar ./
   - ![image-20230718172318633](IMG/网络配置.png)
   - Victim：**192.168.56.108**
   - Attacker：**192.168.56.109**
-- 基本配置：
+
+## 二、基本配置
 
 ```shell
 # 确保使用 root 权限操作
@@ -249,7 +54,7 @@ systemctl start ssh
 - 主机ssh连接：
   - ![image-20230716200904237](IMG/ssh连接.png)
 
-### docker配置
+## 三、docker配置
 
 - 使用 `docker-compose` 一键搭建「漏洞练习环境」。
 
@@ -299,9 +104,7 @@ systemctl start ssh
   - 5.搜索感兴趣的漏洞镜像-【下载】
   - 6.镜像下载完毕后，【首页】，随时可以【启动】镜像开始漏洞攻防实验了
 
-## 7.17
-
-### 漏洞复现
+## 四、实验过程——漏洞复现
 
 #### 漏洞攻击一般流程
 
@@ -358,7 +161,7 @@ systemctl start ssh
 
 - 5.评估漏洞利用效果
 
-### 漏洞一、命令执行-Log4j2远程命令执行
+### 实验一、命令执行-Log4j2远程命令执行
 
 **（CVE-2021-44228）**
 
@@ -667,17 +470,17 @@ suricata
 
 ![](IMG/log4j2_attack.png)
 
-### 漏洞二、跨网段多靶标渗透场景攻防
+### 实验二、跨网段多靶标渗透场景攻防
 
 **CVE-2020-17530 Struts2**
 
-#### 漏洞简介
+#### 1.漏洞简介
 
-Struts2是一个基于MVC设计模式的Web应用框架，它本质上相当于一个servlet，在MVC设计模式中，Struts2作为控制器(Controller)来建立模型与视图的数据交互。在特定的环境下，远程攻击者通过构造 恶意的OGNL表达式 ,可造成 任意代码执行
+> Struts2是一个基于MVC设计模式的Web应用框架，它本质上相当于一个servlet，在MVC设计模式中，Struts2作为控制器(Controller)来建立模型与视图的数据交互。在特定的环境下，远程攻击者通过构造 恶意的OGNL表达式 ,可造成 任意代码执行
+>
+> Apache Struts于2020年12月08日披露 S2-061 Struts 远程代码执行漏洞(CVE-2020-17530)，在使用某些tag等情况下可能存在OGNL表达式注入漏洞，从而造成**远程代码执行**，可能造成**控制服务器**等危害。S2-061是对S2-059沙盒进行的绕过
 
-Apache Struts于2020年12月08日披露 S2-061 Struts 远程代码执行漏洞(CVE-2020-17530)，在使用某些tag等情况下可能存在OGNL表达式注入漏洞，从而造成**远程代码执行**，可能造成**控制服务器**等危害。S2-061是对S2-059沙盒进行的绕过
-
-#### 场景安装与配置
+#### 2.场景安装与配置
 
 网卡配置：
 
@@ -697,7 +500,7 @@ Apache Struts于2020年12月08日披露 S2-061 Struts 远程代码执行漏洞(C
 
 会发现如刚刚搭建的一样，有一台`struts2-cve-2020-17530`、两台`weblogic-cve-2019-2725`、一台`nginx-php-flag`
 
-#### 场景启动
+#### 3.场景启动
 
 - 进入【场景】，启动已经搭建好的 `dmz` 场景场景
 - 我们需要访问的端口号为访问地址后端口号
@@ -706,7 +509,7 @@ Apache Struts于2020年12月08日披露 S2-061 Struts 远程代码执行漏洞(C
 - 打开浏览器，输入 `靶机IP:端口号`
   - ![image-20230725160644384](IMG/访问.png)
 
-#### 捕获指定容器的上下行流量
+#### 4.捕获指定容器的上下行流量
 
 ```shell
 # 建议放到 tmux 会话
@@ -722,9 +525,15 @@ docker run --rm --net=container:${container_name} -v ${PWD}/tcpdump/${container_
 
 ![image-20230725171324486](IMG/保存流量数据.png)
 
-#### 攻破靶标1
+#### 5.攻破靶标1
 
-**metasploit 基础配置**
+**Metasploit** 
+
+>Metasploit是目前世界上领先的渗透测试工具，也是信息安全与渗透测试领域最大的开源项目之一。它彻底改变了我们执行安全测试的方式。
+>
+>Metasploit之所以流行，是因为它可以执行广泛的安全测试任务，从而简化渗透测试的工作。Metasploit适用于所有流行的操作系统，主要以Kali Linux为主。因为Kali Linux预装了 Metasploit 框架和运行在框架上的其他第三方工具。
+
+**Metasploit 基础配置**
 
 ```shell
 # 更新 metasploit
@@ -881,7 +690,7 @@ ls /tmp
 
 ![image-20230725223544160](IMG/提交flag1.png)
 
-#### 建立立足点并发现靶标2-4
+#### 6.建立立足点并发现靶标2-4
 
 ```shell
 # upgrade cmdshell to meterpreter shell
@@ -1006,7 +815,7 @@ curl http://192.170.84.4:7001 -vv
 
 ![image-20230726204652354](IMG/session1_curl.png)
 
-#### 攻破靶标2-4
+#### 7.攻破靶标2-4
 
 search exploit 
 
@@ -1035,27 +844,31 @@ run -j
 
 ![image-20230726205556479](IMG/分别 run.png)
 
+得到flag2：
+
 ![image-20230726205638320](IMG/flag2png)
 
-提交flag，进度40%
+提交flag2，进度40%
 
 ![image-20230726205708903](IMG/提交flag2.png)
 
-相同操作flag2:
+相同操作flag3:
 
 ![image-20230726205858611](IMG/flag3.png)
 
-提交flag2:
+提交flag3:
 
 ![image-20230726205923806](IMG/提交flag3.png)
 
-flag3:
+flag4:
 
 ![image-20230726210047508](IMG/flag4.png)
 
-提交flag3:
+提交flag4:
 
 ![image-20230726210107386](IMG/提交flag4.png)
+
+#### 8.攻破最终靶标5
 
 通过网卡、路由、ARP 发现新子网 192.169.85.0/24:
 
@@ -1122,7 +935,7 @@ wget "http://192.169.85.2/index.php?cmd=ls /tmp" -O /tmp/result && cat /tmp/resu
 
 ## 报错解决
 
-#### 1.[Ubuntu](https://so.csdn.net/so/search?q=Ubuntu&spm=1001.2101.3001.7020)换源error
+### 1.[Ubuntu](https://so.csdn.net/so/search?q=Ubuntu&spm=1001.2101.3001.7020)换源error
 
 The following signatures couldn’t be verified because the public key is not available
 
@@ -1132,15 +945,15 @@ The following signatures couldn’t be verified because the public key is not av
 
 参考链接：[(100条消息) ubuntu换源更新失败：The following signatures couldn‘t be verified because the public key is not available_sxiaocaicai的博客-CSDN博客](https://blog.csdn.net/sxiaocaicai/article/details/119111365)
 
-#### 2.镜像源
+### 2.镜像源
 
 [ubuntu镜像_ubuntu下载地址_ubuntu安装教程-阿里巴巴开源镜像站 (aliyun.com)](https://developer.aliyun.com/mirror/ubuntu?spm=a2c6h.13651102.0.0.9c371b11kyC5Oh)
 
-#### 3.Request method ‘POST‘ not supported Method Not Allowed
+### 3.Request method ‘POST‘ not supported Method Not Allowed
 
 [(100条消息) Request method ‘POST‘ not supported Method Not Allowed_cy谭的博客-CSDN博客](https://blog.csdn.net/zhan107876/article/details/111595338)
 
-#### 4.Metasploit渗透测试中出的错误
+### 4.Metasploit渗透测试中出的错误
 
 [Metasploit渗透测试中出的错误 Exploit failed bad-config\]: Rex::BindFailed The address is already in use_木森czy的博客-CSDN博客](https://blog.csdn.net/weixin_41023533/article/details/121337503)
 
