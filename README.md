@@ -736,6 +736,8 @@ $ wget 'http://192.172.85.2/index.php?cmd=ls /tmp' -O /tmp/result && cat /tmp/re
 
 #### 异常流量检测与防护
 
+**[抓获的Pcap](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/tree/main/code/%E9%9D%B6%E6%9C%BA%E6%B5%81%E9%87%8F%E5%88%86%E6%9E%90pcap)**
+
 使用 Docker 的网络命名空间和网络抓包工具来捕获和分析流量。
 
 - 获取容器的 `PID`（进程ID）
@@ -1141,7 +1143,7 @@ public void startElement(String uri, String localName, String qName, Attributes 
     \Middleware\wlserver_10.3\server\lib\%DOMAIN_HOME%\servers\AdminServer\tmp\_WL_internal\%DOMAIN_HOME%\servers\AdminServer\tmp\.internal\
     ```
 
-### 智能化漏洞扫描和攻击工具
+#### 智能化漏洞扫描和攻击工具
 
 #### Fscan使用初探
 
@@ -1218,3 +1220,4 @@ main.exe -h 192.168.56.1/24
 - [soap协议注入漏洞挖掘](http://www.smatrix.org/forum/forum.php?mod=viewthread&tid=2525)
 - [How To Remove Docker Images, Containers, and Volumes | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes)
 - [Struts2 S2-061 Remote Code Execution Vulnerability (CVE-2020-17530) Threat Alert - NSFOCUS, Inc., a global network and cyber security leader, protects enterprises and carriers from advanced cyber attacks.](https://nsfocusglobal.com/struts2-s2-061-remote-code-execution-vulnerability-cve-2020-17530-threat-alert/)
+- ##### [Oracle WebLogic Affected by Unauthenticated Remote Code Execution Vulnerability (CVE-2019-2725)](https://www.tenable.com/blog/oracle-weblogic-affected-by-unauthenticated-remote-code-execution-vulnerability-cve-2019-2725)
