@@ -1221,4 +1221,4 @@ main.exe -h 192.168.56.1/24
 - [soap协议注入漏洞挖掘](http://www.smatrix.org/forum/forum.php?mod=viewthread&tid=2525)
 - [How To Remove Docker Images, Containers, and Volumes | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes)
 - [Struts2 S2-061 Remote Code Execution Vulnerability (CVE-2020-17530) Threat Alert - NSFOCUS, Inc., a global network and cyber security leader, protects enterprises and carriers from advanced cyber attacks.](https://nsfocusglobal.com/struts2-s2-061-remote-code-execution-vulnerability-cve-2020-17530-threat-alert/)
-- ##### [Oracle WebLogic Affected by Unauthenticated Remote Code Execution Vulnerability (CVE-2019-2725)](https://www.tenable.com/blog/oracle-weblogic-affected-by-unauthenticated-remote-code-execution-vulnerability-cve-2019-2725)
+- [Oracle WebLogic Affected by Unauthenticated Remote Code Execution Vulnerability (CVE-2019-2725)](https://www.tenable.com/blog/oracle-weblogic-affected-by-unauthenticated-remote-code-execution-vulnerability-cve-2019-2725)
